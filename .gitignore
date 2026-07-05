@@ -1,0 +1,27 @@
+# Node (contracts, backend)
+node_modules/
+dist/
+coverage/
+.env
+.env.local
+
+# Hardhat
+contracts/cache/
+contracts/artifacts/
+contracts/typechain-types/
+
+# Android
+android/.gradle/
+android/.idea/
+android/local.properties
+android/build/
+android/app/build/
+android/captures/
+*.apk
+*.aab
+*.keystore
+
+# OS / editor
+.DS_Store
+*.log
+.vscode/

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Part 5b: foto barang, Part 5e: scan QR -->
+    <uses-permission android:name="android.permission.CAMERA" />
+
+    <!-- usesCleartextTraffic hanya untuk dev (backend lokal http). Hapus sebelum release. -->
+    <application
+        android:name=".OriginTagApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.OriginTag"
+        android:usesCleartextTraffic="true">
+
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:launchMode="singleTask">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Part 5e: App Links — link verifikasi terbuka di app jika terinstall.
+                 Butuh assetlinks.json di https://origintag.app/.well-known/ (Part 6). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="https"
+                    android:host="origintag.app"
+                    android:pathPrefix="/verify" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
