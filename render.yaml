@@ -1,0 +1,29 @@
+# Render Blueprint — deploy backend NestJS OriginTag.
+# Cara pakai: dashboard Render → New → Blueprint → pilih repo ini.
+# Secret (sync: false) diisi manual di dashboard, TIDAK masuk repo.
+services:
+  - type: web
+    name: origintag-backend
+    runtime: node
+    rootDir: backend
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm run start
+    envVars:
+      # Publik — boleh di repo
+      - key: BSC_RPC_URL
+        value: https://data-seed-prebsc-1-s1.bnbchain.org:8545
+      - key: CONTRACT_ADDRESS
+        value: "0x6769eAeB7D0d900233c96ca4fD82EeB7438191ad"
+      - key: AI_MODEL
+        value: claude-opus-4-8
+      - key: AUTH_SCORE_THRESHOLD
+        value: "70"
+      # Rahasia WAJIB — isi private key wallet Backend di dashboard Render (Environment)
+      - key: AUTHENTICATOR_PRIVATE_KEY
+        sync: false
+      # Opsional (Tahap 2): tambah ANTHROPIC_API_KEY & GREENFIELD_PRIVATE_KEY di
+      # dashboard Render kapan saja untuk mengaktifkan AI & Greenfield sungguhan.
+      # Tanpa itu, backend jalan mock untuk AI/Greenfield tapi mint tetap nyata.
+    # PUBLIC_VERIFY_BASE_URL tidak diset — backend memakai RENDER_EXTERNAL_URL otomatis.
+    # PORT juga tidak diset — Render menyuntikkannya, backend membaca process.env.PORT.

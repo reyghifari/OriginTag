@@ -26,8 +26,9 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        // Emulator: 10.0.2.2 = localhost mesin host. (HP fisik: ganti ke IP LAN mesin dev.)
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3210/\"")
+        // Backend via Cloudflare Tunnel (HTTPS publik) — bisa diakses emulator & HP fisik.
+        // URL quick-tunnel berubah tiap cloudflared restart; update di sini bila berubah.
+        buildConfigField("String", "API_BASE_URL", "\"https://administrative-enrollment-preventing-video.trycloudflare.com/\"")
 
         // Part 5a — Web3Auth. Client ID dibaca dari local.properties (tidak di-commit).
         buildConfigField("String", "WEB3AUTH_CLIENT_ID", "\"$web3authClientId\"")

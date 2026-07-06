@@ -8,8 +8,9 @@ async function bootstrap() {
   app.enableCors(); // app Android memanggil dari origin berbeda
 
   const port = process.env.PORT ?? 3000;
-  await app.listen(port);
-  console.log(`OriginTag backend jalan di http://localhost:${port}`);
+  // 0.0.0.0 wajib agar bisa diakses di container Render (bukan hanya localhost)
+  await app.listen(port, '0.0.0.0');
+  console.log(`OriginTag backend jalan di port ${port}`);
 }
 
 bootstrap();

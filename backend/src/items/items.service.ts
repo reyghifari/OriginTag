@@ -45,7 +45,11 @@ export class ItemsService {
       evidenceObjectId,
     });
 
-    const baseUrl = this.config.get('PUBLIC_VERIFY_BASE_URL') ?? 'http://localhost:3000';
+    // Di Render, RENDER_EXTERNAL_URL diisi otomatis dengan URL publik service.
+    const baseUrl =
+      this.config.get('PUBLIC_VERIFY_BASE_URL') ??
+      this.config.get('RENDER_EXTERNAL_URL') ??
+      'http://localhost:3000';
     return {
       status: 'minted',
       tokenId,
