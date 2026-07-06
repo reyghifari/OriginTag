@@ -11,7 +11,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -55,7 +54,7 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(phase = Phase.SUBMITTING, error = null) }
-            val owner = walletManager.address.first() ?: DashboardViewModel.DEMO_WALLET
+            val owner = walletManager.currentAddress ?: DashboardViewModel.DEMO_WALLET
             runCatching {
                 repository.registerItem(
                     photoUris = photos,

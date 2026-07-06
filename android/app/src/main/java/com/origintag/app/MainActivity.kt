@@ -7,7 +7,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.lifecycle.lifecycleScope
 import com.origintag.app.navigation.AppNavHost
 import com.origintag.app.ui.theme.OriginTagTheme
 import com.origintag.app.wallet.LocalWeb3Auth
@@ -15,7 +14,6 @@ import com.origintag.app.wallet.WalletManager
 import com.web3auth.core.Web3Auth
 import com.web3auth.core.types.Web3AuthOptions
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import org.torusresearch.fetchnodedetails.types.Web3AuthNetwork
 import javax.inject.Inject
 
@@ -44,19 +42,16 @@ class MainActivity : ComponentActivity() {
         // Tangani redirect jika Activity dibuka dari CustomTab OAuth
         web3Auth.setResultUrl(intent?.data)
 
-        // Restore sesi yang tersimpan; kalau ada, simpan alamatnya
+        // Restore sesi Web3Auth. Hasilnya menentukan status login app (satu sumber
+        // kebenaran) — tidak perlu penyimpanan sesi terpisah.
         web3Auth.initialize().whenComplete { _, error ->
-            if (error == null) {
-                runCatching { web3Auth.getPrivateKey() }
-                    .getOrNull()
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { pk ->
-                        val address = walletManager.addressFromPrivateKey(pk)
-                        lifecycleScope.launch { walletManager.saveSession(address) }
-                    }
+            val pk = if (error == null) {
+                runCatching { web3Auth.getPrivateKey() }.getOrNull()
             } else {
                 Log.d("MainActivity", "Web3Auth initialize: tidak ada sesi (${error.message})")
+                null
             }
+            walletManager.restoreFromWeb3Auth(pk)
         }
 
         // TODO(Part 5e): baca intent?.data untuk App Link origintag.app/verify/{tokenId}

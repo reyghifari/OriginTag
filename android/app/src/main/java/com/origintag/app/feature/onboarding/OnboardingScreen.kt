@@ -80,7 +80,9 @@ fun OnboardingScreen(
         )
         Spacer(Modifier.height(40.dp))
 
-        if (state.loading) {
+        if (state.checkingSession) {
+            CircularProgressIndicator()
+        } else if (state.loading) {
             CircularProgressIndicator()
             Text("Menghubungkan wallet...", Modifier.padding(top = 12.dp))
         } else {

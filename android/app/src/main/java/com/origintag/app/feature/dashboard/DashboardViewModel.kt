@@ -9,7 +9,6 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -39,7 +38,7 @@ class DashboardViewModel @Inject constructor(
     /** Muat passport milik wallet aktif dari sesi (FR-09). */
     fun load() {
         viewModelScope.launch {
-            val address = walletManager.address.first() ?: DEMO_WALLET
+            val address = walletManager.currentAddress ?: DEMO_WALLET
             _uiState.update { it.copy(loading = true, error = null, walletAddress = address) }
             runCatching { repository.getPassports(address) }
                 .onSuccess { list ->

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.origintag.app.feature.dashboard.DashboardViewModel
 import com.origintag.app.wallet.WalletManager
+import com.origintag.app.wallet.WalletManager.SessionState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -19,6 +20,8 @@ class OnboardingViewModel @Inject constructor(
 ) : ViewModel() {
 
     data class UiState(
+        // true selama menunggu hasil restore sesi Web3Auth (initialize)
+        val checkingSession: Boolean = true,
         val loading: Boolean = false,
         val error: String? = null,
         val loggedIn: Boolean = false,
@@ -27,30 +30,40 @@ class OnboardingViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
+    init {
+        // Ikuti status sesi Web3Auth: Checking → spinner, LoggedIn → masuk, LoggedOut → tampil login.
+        viewModelScope.launch {
+            walletManager.session.collect { s ->
+                _uiState.update {
+                    when (s) {
+                        is SessionState.Checking -> it.copy(checkingSession = true)
+                        is SessionState.LoggedIn -> it.copy(checkingSession = false, loggedIn = true)
+                        is SessionState.LoggedOut -> it.copy(checkingSession = false, loggedIn = false)
+                    }
+                }
+            }
+        }
+    }
+
     fun setLoading() = _uiState.update { it.copy(loading = true, error = null) }
 
     fun setError(message: String) =
         _uiState.update { it.copy(loading = false, error = message) }
 
-    /** Dipanggil setelah Web3Auth login sukses; turunkan alamat & simpan sesi. */
+    /** Dipanggil setelah Web3Auth login sukses; turunkan alamat & set sesi login. */
     fun completeLogin(privateKey: String) {
         viewModelScope.launch {
-            runCatching {
-                val address = walletManager.addressFromPrivateKey(privateKey)
-                walletManager.saveSession(address)
-            }.onSuccess {
-                _uiState.update { it.copy(loading = false, loggedIn = true) }
-            }.onFailure { e ->
-                setError(e.message ?: "Gagal memproses wallet")
-            }
+            runCatching { walletManager.addressFromPrivateKey(privateKey) }
+                .onSuccess { address ->
+                    _uiState.update { it.copy(loading = false) }
+                    walletManager.loginWithAddress(address) // memicu loggedIn via collector
+                }
+                .onFailure { e -> setError(e.message ?: "Gagal memproses wallet") }
         }
     }
 
-    /** Bypass login untuk demo saat Client ID Web3Auth belum diisi. */
+    /** Bypass login untuk demo (sesi ini tidak persist antar cold-start). */
     fun skipWithDemoWallet() {
-        viewModelScope.launch {
-            walletManager.saveSession(DashboardViewModel.DEMO_WALLET)
-            _uiState.update { it.copy(loggedIn = true) }
-        }
+        walletManager.loginWithAddress(DashboardViewModel.DEMO_WALLET)
     }
 }
