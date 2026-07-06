@@ -28,6 +28,9 @@ android {
         buildConfigField("String", "WEB3AUTH_REDIRECT_URL", "\"com.origintag.app://auth\"")
         // BSC Testnet chainId 97 = 0x61 (BSC Mainnet 56 = 0x38)
         buildConfigField("String", "DEFAULT_CHAIN_ID", "\"0x61\"")
+        // RPC untuk menandatangani & broadcast transfer langsung dari app (Part 5d)
+        buildConfigField("String", "BSC_RPC_URL", "\"https://data-seed-prebsc-1-s1.bnbchain.org:8545\"")
+        buildConfigField("long", "BSC_CHAIN_ID", "97L")
 
         // Web3Auth menangkap redirect OAuth lewat scheme ini (lihat AndroidManifest)
         manifestPlaceholders["web3authScheme"] = "com.origintag.app"

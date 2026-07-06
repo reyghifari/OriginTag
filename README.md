@@ -64,10 +64,10 @@ registrasi barang → AI authentication → upload bukti ke Greenfield → mint 
 - [x] Part 4 — BNB Greenfield: implementasi upload via `@bnb-chain/greenfield-js-sdk`
       (bucket ensure-exists + delegated object upload per struktur PRD §9.3);
       isi `GREENFIELD_PRIVATE_KEY` di `backend/.env` untuk aktif, tanpa key = mock
-- [~] Part 5 — Android app: **build APK debug sukses**. Fungsional & tersambung backend:
-      5a wallet (Web3Auth login → embedded wallet, alamat dipakai lintas app; lihat
-      [android/WEB3AUTH_SETUP.md](android/WEB3AUTH_SETUP.md) — tinggal isi Client ID),
-      5b registrasi (Photo Picker + kompresi + multipart → mint), 5c detail passport.
-      Masih TODO: 5d transfer signing, 5e scan QR (lihat penanda `TODO(Part 5x)`)
+- [x] Part 5 — Android app: **build APK debug sukses**, semua sub-part terimplementasi:
+      5a wallet (Web3Auth → embedded wallet; isi Client ID, lihat [android/WEB3AUTH_SETUP.md](android/WEB3AUTH_SETUP.md)),
+      5b registrasi (Photo Picker + kompresi + multipart → mint), 5c detail passport,
+      5d transfer (tanda tangan via web3j + broadcast ke BSC Testnet), 5e scan QR (CameraX + ML Kit).
+      Belum diuji di perangkat fisik (butuh device + Client ID + kontrak ter-deploy).
 - [x] Part 6 — halaman verifikasi publik: versi minimal live di `GET /verify/:tokenId`
 - [ ] Part 7 — integrasi & demo
