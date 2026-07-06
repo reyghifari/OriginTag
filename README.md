@@ -57,9 +57,10 @@ registrasi barang → AI authentication → upload bukti ke Greenfield → mint 
 ## Status Implementasi
 
 - [x] Scaffold struktur repo
-- [ ] Part 1 — smart contract (kode dasar ada, belum deploy + test belum lengkap)
-- [ ] Part 2 — backend API (skeleton jalan dengan mock mode)
-- [ ] Part 3 — AI Authentication (stub, lihat `backend/src/ai/ai.service.ts`)
+- [x] Part 1 — smart contract: implementasi lengkap, 6/6 unit test hijau (belum deploy ke testnet)
+- [x] Part 2 — backend API: skeleton jalan, mock mode terverifikasi end-to-end
+- [x] Part 3 — AI Authentication: implementasi live via Claude API (vision + structured outputs);
+      isi `ANTHROPIC_API_KEY` di `backend/.env` untuk mengaktifkan, tanpa key = mock (skor 92)
 - [ ] Part 4 — BNB Greenfield (stub, lihat `backend/src/greenfield/greenfield.service.ts`)
 - [ ] Part 5 — Android app (skeleton navigasi + network layer, wallet SDK belum)
 - [ ] Part 6 — halaman verifikasi publik (versi minimal di `GET /verify/:tokenId`)

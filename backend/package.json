@@ -9,7 +9,7 @@
     "start:dev": "nest start --watch"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
+    "@anthropic-ai/sdk": "^0.110.0",
     "@bnb-chain/greenfield-js-sdk": "^2.2.0",
     "@nestjs/common": "^11.0.0",
     "@nestjs/config": "^4.0.0",
