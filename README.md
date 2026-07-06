@@ -61,7 +61,11 @@ registrasi barang → AI authentication → upload bukti ke Greenfield → mint 
 - [x] Part 2 — backend API: skeleton jalan, mock mode terverifikasi end-to-end
 - [x] Part 3 — AI Authentication: implementasi live via Claude API (vision + structured outputs);
       isi `ANTHROPIC_API_KEY` di `backend/.env` untuk mengaktifkan, tanpa key = mock (skor 92)
-- [ ] Part 4 — BNB Greenfield (stub, lihat `backend/src/greenfield/greenfield.service.ts`)
-- [ ] Part 5 — Android app (skeleton navigasi + network layer, wallet SDK belum)
-- [ ] Part 6 — halaman verifikasi publik (versi minimal di `GET /verify/:tokenId`)
+- [x] Part 4 — BNB Greenfield: implementasi upload via `@bnb-chain/greenfield-js-sdk`
+      (bucket ensure-exists + delegated object upload per struktur PRD §9.3);
+      isi `GREENFIELD_PRIVATE_KEY` di `backend/.env` untuk aktif, tanpa key = mock
+- [~] Part 5 — Android app: **build APK debug sukses**. Fungsional & tersambung backend:
+      5b registrasi (Photo Picker + kompresi + multipart → mint), 5c detail passport.
+      Masih TODO: 5a wallet SDK, 5d transfer signing, 5e scan QR (lihat penanda `TODO(Part 5x)`)
+- [x] Part 6 — halaman verifikasi publik: versi minimal live di `GET /verify/:tokenId`
 - [ ] Part 7 — integrasi & demo
