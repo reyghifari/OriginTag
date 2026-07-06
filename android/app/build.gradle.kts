@@ -26,9 +26,8 @@ android {
         versionCode = 1
         versionName = "0.1.0"
 
-        // Backend lokal dari emulator Android (10.0.2.2 = loopback host).
-        // Untuk device fisik, ganti dengan IP LAN mesin dev atau URL deploy.
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
+        // Emulator: 10.0.2.2 = localhost mesin host. (HP fisik: ganti ke IP LAN mesin dev.)
+        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3210/\"")
 
         // Part 5a — Web3Auth. Client ID dibaca dari local.properties (tidak di-commit).
         buildConfigField("String", "WEB3AUTH_CLIENT_ID", "\"$web3authClientId\"")
