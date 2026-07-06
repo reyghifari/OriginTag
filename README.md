@@ -65,7 +65,9 @@ registrasi barang → AI authentication → upload bukti ke Greenfield → mint 
       (bucket ensure-exists + delegated object upload per struktur PRD §9.3);
       isi `GREENFIELD_PRIVATE_KEY` di `backend/.env` untuk aktif, tanpa key = mock
 - [~] Part 5 — Android app: **build APK debug sukses**. Fungsional & tersambung backend:
+      5a wallet (Web3Auth login → embedded wallet, alamat dipakai lintas app; lihat
+      [android/WEB3AUTH_SETUP.md](android/WEB3AUTH_SETUP.md) — tinggal isi Client ID),
       5b registrasi (Photo Picker + kompresi + multipart → mint), 5c detail passport.
-      Masih TODO: 5a wallet SDK, 5d transfer signing, 5e scan QR (lihat penanda `TODO(Part 5x)`)
+      Masih TODO: 5d transfer signing, 5e scan QR (lihat penanda `TODO(Part 5x)`)
 - [x] Part 6 — halaman verifikasi publik: versi minimal live di `GET /verify/:tokenId`
 - [ ] Part 7 — integrasi & demo

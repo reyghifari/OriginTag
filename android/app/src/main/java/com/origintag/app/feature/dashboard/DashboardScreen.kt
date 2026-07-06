@@ -39,7 +39,7 @@ fun DashboardScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
-        viewModel.load(DashboardViewModel.DEMO_WALLET)
+        viewModel.load()
     }
 
     Scaffold(

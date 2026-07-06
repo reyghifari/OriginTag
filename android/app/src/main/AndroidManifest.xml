@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Part 5b: foto barang, Part 5e: scan QR -->
@@ -13,7 +14,8 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.OriginTag"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        tools:replace="android:allowBackup">
 
         <activity
             android:name=".MainActivity"
@@ -34,6 +36,16 @@
                     android:scheme="https"
                     android:host="origintag.app"
                     android:pathPrefix="/verify" />
+            </intent-filter>
+
+            <!-- Part 5a: redirect OAuth Web3Auth (com.origintag.app://auth) -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="${web3authScheme}"
+                    android:host="${web3authHost}" />
             </intent-filter>
         </activity>
     </application>

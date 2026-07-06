@@ -6,10 +6,12 @@ import androidx.lifecycle.viewModelScope
 import com.origintag.app.data.model.RegisterResponse
 import com.origintag.app.data.repository.PassportRepository
 import com.origintag.app.feature.dashboard.DashboardViewModel
+import com.origintag.app.wallet.WalletManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -18,6 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
     private val repository: PassportRepository,
+    private val walletManager: WalletManager,
 ) : ViewModel() {
 
     /** Tahap yang ditampilkan ke user selama proses berjalan */
@@ -52,6 +55,7 @@ class RegisterViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiState.update { it.copy(phase = Phase.SUBMITTING, error = null) }
+            val owner = walletManager.address.first() ?: DashboardViewModel.DEMO_WALLET
             runCatching {
                 repository.registerItem(
                     photoUris = photos,
@@ -60,8 +64,7 @@ class RegisterViewModel @Inject constructor(
                     serialNumber = serialNumber,
                     purchaseDate = purchaseDate,
                     warrantyDurationDays = warrantyDurationDays,
-                    // TODO(Part 5a): ganti dengan wallet address dari sesi login
-                    ownerAddress = DashboardViewModel.DEMO_WALLET,
+                    ownerAddress = owner,
                 )
             }.onSuccess { res ->
                 _uiState.update {

@@ -21,6 +21,31 @@ android {
         // Backend lokal dari emulator Android (10.0.2.2 = loopback host).
         // Untuk device fisik, ganti dengan IP LAN mesin dev atau URL deploy.
         buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
+
+        // Part 5a — Web3Auth. Ambil Client ID dari https://dashboard.web3auth.io
+        // (buat project, network Sapphire Devnet untuk dev). WAJIB diisi agar login jalan.
+        buildConfigField("String", "WEB3AUTH_CLIENT_ID", "\"GANTI_DENGAN_CLIENT_ID_ANDA\"")
+        buildConfigField("String", "WEB3AUTH_REDIRECT_URL", "\"com.origintag.app://auth\"")
+        // BSC Testnet chainId 97 = 0x61 (BSC Mainnet 56 = 0x38)
+        buildConfigField("String", "DEFAULT_CHAIN_ID", "\"0x61\"")
+
+        // Web3Auth menangkap redirect OAuth lewat scheme ini (lihat AndroidManifest)
+        manifestPlaceholders["web3authScheme"] = "com.origintag.app"
+        manifestPlaceholders["web3authHost"] = "auth"
+    }
+
+    packaging {
+        resources {
+            // web3j/bouncycastle membawa duplikat metadata yang bentrok saat merge
+            excludes += setOf(
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.md",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.md",
+                "META-INF/*.kotlin_module",
+            )
+        }
     }
 
     buildTypes {
@@ -77,8 +102,11 @@ dependencies {
     implementation(libs.camerax.view)
     implementation(libs.mlkit.barcode)
 
-    // TODO(Part 5a): wallet SDK — verifikasi koordinat & versi terbaru sebelum uncomment
-    // implementation("com.web3auth:core:<latest>")   // social login → embedded wallet (FR-01)
-    // implementation("com.reown:appkit:<latest>")    // WalletConnect v2 (MetaMask/Trust Wallet)
-    // implementation("org.web3j:core:4.12.2")        // query on-chain langsung dari app (opsional)
+    // Part 5a — Web3Auth (social login → embedded wallet, FR-01) + web3j untuk
+    // menurunkan alamat ETH dari private key. web3j core versi -android khusus.
+    implementation(libs.web3auth)
+    implementation(libs.web3j.core)
+
+    // TODO(Part 5a lanjutan): WalletConnect v2 untuk MetaMask/Trust Wallet mobile
+    // implementation("com.reown:appkit:<latest>")
 }

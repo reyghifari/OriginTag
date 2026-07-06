@@ -4,10 +4,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.origintag.app.data.model.PassportDto
 import com.origintag.app.data.repository.PassportRepository
+import com.origintag.app.wallet.WalletManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -16,15 +18,17 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val repository: PassportRepository,
+    private val walletManager: WalletManager,
 ) : ViewModel() {
 
     companion object {
-        // TODO(Part 5a): ganti dengan wallet address dari sesi login (DataStore)
+        // Wallet demo untuk mode "Lewati" saat Client ID Web3Auth belum diisi
         const val DEMO_WALLET = "0x0000000000000000000000000000000000000001"
     }
 
     data class UiState(
         val loading: Boolean = false,
+        val walletAddress: String? = null,
         val passports: List<PassportDto> = emptyList(),
         val error: String? = null,
     )
@@ -32,10 +36,12 @@ class DashboardViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(UiState())
     val uiState: StateFlow<UiState> = _uiState.asStateFlow()
 
-    fun load(walletAddress: String) {
+    /** Muat passport milik wallet aktif dari sesi (FR-09). */
+    fun load() {
         viewModelScope.launch {
-            _uiState.update { it.copy(loading = true, error = null) }
-            runCatching { repository.getPassports(walletAddress) }
+            val address = walletManager.address.first() ?: DEMO_WALLET
+            _uiState.update { it.copy(loading = true, error = null, walletAddress = address) }
+            runCatching { repository.getPassports(address) }
                 .onSuccess { list ->
                     _uiState.update { it.copy(loading = false, passports = list) }
                 }
