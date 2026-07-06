@@ -1,6 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import OpenAI from 'openai';
 
 export interface AiAuthResult {
   /** Skor keaslian 0-100 (FR-03) */
@@ -11,40 +11,6 @@ export interface AiAuthResult {
 }
 
 const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-
-/**
- * JSON schema untuk structured outputs — respons dijamin valid terhadap schema
- * ini, tidak perlu parsing defensif berlebihan. Batas nilai (0-100) tidak bisa
- * dinyatakan di schema (numerical constraints tidak didukung), jadi di-clamp
- * saat parsing.
- */
-const OUTPUT_SCHEMA = {
-  type: 'object',
-  properties: {
-    score: {
-      type: 'integer',
-      description:
-        'Skor keaslian 0-100. 0 = hampir pasti palsu, 100 = hampir pasti asli. ' +
-        'Konservatif: bukti visual kurang = skor turun, bukan naik.',
-    },
-    conditionSummary: {
-      type: 'string',
-      description: 'Ringkasan kondisi barang, 1-2 kalimat Bahasa Indonesia',
-    },
-    reasons: {
-      type: 'array',
-      items: { type: 'string' },
-      description: 'Alasan spesifik pendukung skor (logo, jahitan, material, label, dst.)',
-    },
-    flags: {
-      type: 'array',
-      items: { type: 'string' },
-      description: 'Kejanggalan yang butuh review manual; array kosong jika tidak ada',
-    },
-  },
-  required: ['score', 'conditionSummary', 'reasons', 'flags'],
-  additionalProperties: false,
-} as const;
 
 const SYSTEM_PROMPT = `Kamu adalah expert authenticator barang branded (sneakers, tas mewah, fashion, elektronik) untuk OriginTag — protokol digital passport yang menilai keaslian barang preloved sebelum diterbitkan sertifikat NFT-nya.
 
@@ -63,21 +29,34 @@ Ketentuan skor — KONSERVATIF, karena meloloskan barang palsu jauh lebih merugi
 
 Jika foto buram, gelap, tidak lengkap, atau tidak memperlihatkan detail kunci (logo close-up, label, serial number), turunkan skor dan catat kekurangannya di flags.`;
 
-/** Part 3 — AI Authentication Engine (PRD §9.4) */
+const JSON_INSTRUCTION = `Balas HANYA dengan satu objek JSON valid, tanpa teks pembuka/penutup dan tanpa blok markdown. Bentuk persis:
+{"score": <bilangan bulat 0-100>, "conditionSummary": "<ringkasan kondisi 1-2 kalimat>", "reasons": ["<alasan pendukung skor>"], "flags": ["<kejanggalan; array kosong jika tidak ada>"]}`;
+
+/**
+ * Part 3 — AI Authentication Engine (PRD §9.4).
+ * Default pakai Google Gemini lewat endpoint kompatibel-OpenAI
+ * (AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/).
+ * Gemini mendukung analisis gambar (vision) — berbeda dari DeepSeek V4 yang teks saja.
+ * Bisa juga dipakai untuk provider OpenAI-compatible lain (OpenAI, dll.) via env.
+ */
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  private readonly client?: Anthropic;
+  private readonly client?: OpenAI;
   private readonly model: string;
 
   constructor(config: ConfigService) {
-    this.model = config.get<string>('AI_MODEL') ?? 'claude-opus-4-8';
-    const apiKey = config.get<string>('ANTHROPIC_API_KEY');
+    this.model = config.get<string>('AI_MODEL') ?? 'gemini-2.0-flash';
+    const apiKey = config.get<string>('AI_API_KEY');
+    const baseURL =
+      config.get<string>('AI_BASE_URL') ??
+      'https://generativelanguage.googleapis.com/v1beta/openai/';
+
     if (apiKey) {
-      this.client = new Anthropic({ apiKey });
-      this.logger.log(`AI Authentication aktif (model: ${this.model})`);
+      this.client = new OpenAI({ apiKey, baseURL });
+      this.logger.log(`AI Authentication aktif (model: ${this.model}, baseURL: ${baseURL})`);
     } else {
-      this.logger.warn('ANTHROPIC_API_KEY belum diset — AiService jalan di MOCK MODE');
+      this.logger.warn('AI_API_KEY belum diset — AiService jalan di MOCK MODE');
     }
   }
 
@@ -87,72 +66,73 @@ export class AiService {
   ): Promise<AiAuthResult> {
     if (!this.client) return this.mockResult(photos, metadata);
 
-    const imageBlocks: Anthropic.ImageBlockParam[] = photos
+    const imageParts: OpenAI.Chat.Completions.ChatCompletionContentPart[] = photos
       .filter((f) => SUPPORTED_IMAGE_TYPES.includes(f.mimetype))
       .slice(0, 5)
       .map((f) => ({
-        type: 'image',
-        source: {
-          type: 'base64',
-          media_type: f.mimetype as 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp',
-          data: f.buffer.toString('base64'),
-        },
+        type: 'image_url',
+        image_url: { url: `data:${f.mimetype};base64,${f.buffer.toString('base64')}` },
       }));
 
-    if (imageBlocks.length === 0) {
+    if (imageParts.length === 0) {
       return this.manualReviewResult('Tidak ada foto dengan format yang didukung (JPEG/PNG/GIF/WebP)');
     }
 
-    const response = await this.client.messages.create({
-      model: this.model,
-      max_tokens: 16000,
-      thinking: { type: 'adaptive' },
-      system: SYSTEM_PROMPT,
-      output_config: {
-        format: { type: 'json_schema', schema: OUTPUT_SCHEMA },
-      },
-      messages: [
-        {
-          role: 'user',
-          content: [
-            ...imageBlocks,
-            {
-              type: 'text',
-              text:
-                `Nilai keaslian barang berikut berdasarkan foto di atas.\n` +
-                `Brand: ${metadata.brand}\n` +
-                `Kategori: ${metadata.category}\n` +
-                `Serial number (klaim penjual): ${metadata.serialNumber || 'tidak dicantumkan'}`,
-            },
-          ],
-        },
-      ],
-    });
+    try {
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        max_tokens: 2048,
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          {
+            role: 'user',
+            content: [
+              ...imageParts,
+              {
+                type: 'text',
+                text:
+                  `Nilai keaslian barang berikut berdasarkan foto di atas.\n` +
+                  `Brand: ${metadata.brand}\n` +
+                  `Kategori: ${metadata.category}\n` +
+                  `Serial number (klaim penjual): ${metadata.serialNumber || 'tidak dicantumkan'}\n\n` +
+                  JSON_INSTRUCTION,
+              },
+            ],
+          },
+        ],
+      });
 
-    // Safety classifier bisa menolak request — jangan baca content sebelum cek ini
-    if (response.stop_reason === 'refusal') {
-      this.logger.warn('AI menolak menganalisis foto (stop_reason: refusal)');
-      return this.manualReviewResult('AI menolak menganalisis — perlu review manual');
+      const text = response.choices[0]?.message?.content ?? '';
+      const parsed = this.parseResult(text);
+      if (!parsed) {
+        this.logger.error(`Output AI tidak bisa diparse. Mentah: ${text.slice(0, 200)}`);
+        return this.manualReviewResult('Output AI tidak valid — perlu review manual');
+      }
+
+      this.logger.log(
+        `AI Authentication: ${metadata.brand} ${metadata.category} → skor ${parsed.score}/100`,
+      );
+      return parsed;
+    } catch (e) {
+      const message = e instanceof Error ? e.message : String(e);
+      this.logger.error(`Panggilan AI gagal: ${message}`);
+      return this.manualReviewResult(`AI error: ${message}`);
     }
-
-    const textBlock = response.content.find(
-      (b): b is Anthropic.TextBlock => b.type === 'text',
-    );
-    const parsed = textBlock ? this.parseResult(textBlock.text) : null;
-    if (!parsed) {
-      this.logger.error('Output AI tidak bisa diparse sebagai AiAuthResult');
-      return this.manualReviewResult('Output AI tidak valid — perlu review manual');
-    }
-
-    this.logger.log(
-      `AI Authentication: ${metadata.brand} ${metadata.category} → skor ${parsed.score}/100`,
-    );
-    return parsed;
   }
 
   private parseResult(raw: string): AiAuthResult | null {
     try {
-      const data = JSON.parse(raw);
+      // LLM kadang membungkus JSON dalam ```json ... ``` — bersihkan dulu.
+      const cleaned = raw
+        .trim()
+        .replace(/^```(?:json)?\s*/i, '')
+        .replace(/\s*```$/, '')
+        .trim();
+      const start = cleaned.indexOf('{');
+      const end = cleaned.lastIndexOf('}');
+      const jsonStr = start >= 0 && end > start ? cleaned.slice(start, end + 1) : cleaned;
+
+      const data = JSON.parse(jsonStr);
       const score = Number(data.score);
       if (!Number.isFinite(score)) return null;
       return {
@@ -183,7 +163,7 @@ export class AiService {
     return {
       score: 92,
       conditionSummary: `[MOCK] ${metadata.brand} ${metadata.category}, ${photos.length} foto — kondisi baik`,
-      reasons: ['hasil mock — set ANTHROPIC_API_KEY untuk analisis sungguhan'],
+      reasons: ['hasil mock — set AI_API_KEY untuk analisis sungguhan'],
       flags: [],
     };
   }
