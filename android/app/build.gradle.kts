@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -6,6 +8,12 @@ plugins {
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
 }
+val localProperties = Properties().apply {
+    val file = rootProject.file("local.properties")
+    if (file.exists()) file.inputStream().use { load(it) }
+}
+val web3authClientId: String =
+    localProperties.getProperty("WEB3AUTH_CLIENT_ID") ?: "GANTI_DENGAN_CLIENT_ID_ANDA"
 
 android {
     namespace = "com.origintag.app"
@@ -22,9 +30,8 @@ android {
         // Untuk device fisik, ganti dengan IP LAN mesin dev atau URL deploy.
         buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3000/\"")
 
-        // Part 5a — Web3Auth. Ambil Client ID dari https://dashboard.web3auth.io
-        // (buat project, network Sapphire Devnet untuk dev). WAJIB diisi agar login jalan.
-        buildConfigField("String", "WEB3AUTH_CLIENT_ID", "\"GANTI_DENGAN_CLIENT_ID_ANDA\"")
+        // Part 5a — Web3Auth. Client ID dibaca dari local.properties (tidak di-commit).
+        buildConfigField("String", "WEB3AUTH_CLIENT_ID", "\"$web3authClientId\"")
         buildConfigField("String", "WEB3AUTH_REDIRECT_URL", "\"com.origintag.app://auth\"")
         // BSC Testnet chainId 97 = 0x61 (BSC Mainnet 56 = 0x38)
         buildConfigField("String", "DEFAULT_CHAIN_ID", "\"0x61\"")

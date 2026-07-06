@@ -3,6 +3,7 @@
 Digital passport untuk autentikasi & kepemilikan barang fisik di BNB Chain (BSC + Greenfield), dengan **app Android native (Kotlin)** sebagai frontend.
 
 Pembagian part, timeline, dan keputusan arsitektur ada di [PROJECT_BREAKDOWN.md](PROJECT_BREAKDOWN.md).
+Untuk membawa ke demo berjalan di perangkat, ikuti [DEPLOYMENT.md](DEPLOYMENT.md) (urutan deploy → env → build → uji).
 
 ## Struktur Repo
 
