@@ -4,10 +4,12 @@ import {
   Get,
   Param,
   Post,
+  Res,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
+import { Response } from 'express';
 import { RegisterItemDto, TransferItemDto } from './dto/items.dto';
 import { ItemsService } from './items.service';
 
@@ -42,5 +44,28 @@ export class ItemsController {
   @Get(':tokenId/warranty')
   warranty(@Param('tokenId') tokenId: string) {
     return this.items.getWarranty(tokenId);
+  }
+
+  /** Jumlah foto bukti passport (app pakai untuk membangun URL tiap foto) */
+  @Get(':tokenId/photos')
+  photos(@Param('tokenId') tokenId: string) {
+    return this.items.getPhotoCount(tokenId);
+  }
+
+  /** Proxy 1 foto bukti dari Greenfield (foto disimpan privat, diunduh via key backend) */
+  @Get(':tokenId/photo/:index')
+  async photo(
+    @Param('tokenId') tokenId: string,
+    @Param('index') index: string,
+    @Res() res: Response,
+  ) {
+    const file = await this.items.getPhoto(tokenId, Number(index));
+    if (!file) {
+      res.status(404).send('Foto tidak ditemukan');
+      return;
+    }
+    res.setHeader('Content-Type', file.contentType);
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    res.send(file.data);
   }
 }

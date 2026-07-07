@@ -14,8 +14,8 @@ Status & cara menjalankan setup saat ini (BSC Testnet, backend lokal + Cloudflar
 | **App Android** | `API_BASE_URL` di `android/app/build.gradle.kts` menunjuk ke URL tunnel |
 | **Wallet Deployer** | `0x0100F82FB1E2D635F35e517B033558FBa6b2DF8d` (admin kontrak) |
 | **Wallet Backend** | `0x4a16A3F4A10633a4BBB9C1Ecc69F6AF49e553BbE` (mint, `AUTHENTICATOR_ROLE`) |
-| **AI Authentication** | MOCK (skor selalu 92) — Tahap 2 |
-| **BNB Greenfield** | MOCK (bukti tidak benar-benar diupload) — Tahap 2 |
+| **AI Authentication** | ✅ REAL — Google Gemini `gemini-3.5-flash` (vision) |
+| **BNB Greenfield** | ✅ REAL — bucket `origintag-evidence-482acb`, wallet `0x78fa...2ACB` |
 
 Secret ada di `backend/.env` (private key backend, contract address) dan `android/local.properties` (Web3Auth Client ID) — **keduanya gitignored, tidak ter-commit.**
 

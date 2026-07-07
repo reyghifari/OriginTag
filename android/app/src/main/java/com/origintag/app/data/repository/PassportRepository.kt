@@ -29,6 +29,8 @@ class PassportRepository @Inject constructor(
 
     suspend fun getWarranty(tokenId: String) = api.getWarranty(tokenId)
 
+    suspend fun getPhotoCount(tokenId: String) = api.getPhotoCount(tokenId)
+
     suspend fun transfer(tokenId: String, toAddress: String) =
         api.transferPassport(tokenId, TransferRequest(toAddress))
 

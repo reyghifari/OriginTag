@@ -6,6 +6,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CircularProgressIndicator
@@ -19,9 +25,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil.compose.AsyncImage
 import com.origintag.app.data.model.PassportDto
 
 /** Part 5c — detail passport: skor, sisa garansi, riwayat kepemilikan */
@@ -55,6 +64,7 @@ fun PassportDetailScreen(
 
                 state.passport != null -> PassportDetail(
                     passport = state.passport!!,
+                    photoUrls = state.photoUrls,
                     onTransferClick = onTransferClick,
                 )
             }
@@ -63,13 +73,33 @@ fun PassportDetailScreen(
 }
 
 @Composable
-private fun PassportDetail(passport: PassportDto, onTransferClick: () -> Unit) {
+private fun PassportDetail(
+    passport: PassportDto,
+    photoUrls: List<String>,
+    onTransferClick: () -> Unit,
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .verticalScroll(rememberScrollState())
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
+        if (photoUrls.isNotEmpty()) {
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(photoUrls) { url ->
+                    AsyncImage(
+                        model = url,
+                        contentDescription = "Foto barang",
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier
+                            .size(220.dp)
+                            .clip(RoundedCornerShape(12.dp)),
+                    )
+                }
+            }
+        }
+
         Text("${passport.brand} — ${passport.category}", style = MaterialTheme.typography.headlineSmall)
 
         Card(Modifier.fillMaxWidth()) {

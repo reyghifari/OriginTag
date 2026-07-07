@@ -75,4 +75,30 @@ export class ItemsService {
     const remainingSeconds = await this.blockchain.getRemainingWarranty(tokenId);
     return { tokenId, remainingSeconds };
   }
+
+  /** Jumlah foto bukti untuk passport ini (di Greenfield). */
+  async getPhotoCount(tokenId: string): Promise<{ count: number }> {
+    const passport = await this.blockchain.getPassport(tokenId);
+    const draftId = this.draftIdFromEvidence(passport.evidenceObjectId);
+    if (!draftId) return { count: 0 };
+    return { count: await this.greenfield.countPhotos(draftId) };
+  }
+
+  /** Unduh 1 foto bukti (proxy dari Greenfield — foto disimpan privat). */
+  async getPhoto(
+    tokenId: string,
+    index: number,
+  ): Promise<{ data: Buffer; contentType: string } | null> {
+    const passport = await this.blockchain.getPassport(tokenId);
+    const draftId = this.draftIdFromEvidence(passport.evidenceObjectId);
+    if (!draftId) return null;
+    // App mengompres semua foto ke JPEG sebelum upload → ekstensi selalu .jpg
+    return this.greenfield.downloadObject(`${draftId}/photos/${index}.jpg`);
+  }
+
+  /** Ambil draftId dari URI greenfield://bucket/{draftId} (null jika mock/kosong). */
+  private draftIdFromEvidence(uri?: string): string | null {
+    const m = uri?.match(/^greenfield:\/\/[^/]+\/(.+)$/);
+    return m ? m[1] : null;
+  }
 }

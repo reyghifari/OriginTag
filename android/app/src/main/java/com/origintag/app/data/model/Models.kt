@@ -49,3 +49,6 @@ data class TransferResponse(
 
 @Serializable
 data class WarrantyResponse(val tokenId: String, val remainingSeconds: Long)
+
+@Serializable
+data class PhotoCountDto(val count: Int)

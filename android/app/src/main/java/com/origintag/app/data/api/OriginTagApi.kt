@@ -1,6 +1,7 @@
 package com.origintag.app.data.api
 
 import com.origintag.app.data.model.PassportDto
+import com.origintag.app.data.model.PhotoCountDto
 import com.origintag.app.data.model.RegisterResponse
 import com.origintag.app.data.model.TransferRequest
 import com.origintag.app.data.model.TransferResponse
@@ -41,6 +42,10 @@ interface OriginTagApi {
 
     @GET("items/{tokenId}/warranty")
     suspend fun getWarranty(@Path("tokenId") tokenId: String): WarrantyResponse
+
+    /** Part 4/5c — jumlah foto bukti; app membangun URL /photo/{i} dari sini */
+    @GET("items/{tokenId}/photos")
+    suspend fun getPhotoCount(@Path("tokenId") tokenId: String): PhotoCountDto
 
     @GET("users/{walletAddress}/passports")
     suspend fun getUserPassports(@Path("walletAddress") walletAddress: String): List<PassportDto>

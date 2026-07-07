@@ -152,6 +152,49 @@ export class GreenfieldService {
     this.logger.log(`Bucket ${this.bucket} dibuat di Greenfield`);
   }
 
+  /** Jumlah foto tersimpan untuk sebuah draftId (folder {draftId}/photos/). */
+  async countPhotos(draftId: string): Promise<number> {
+    if (!this.client) return 0;
+    try {
+      const sp = await this.client.sp.getSPUrlByBucket(this.bucket);
+      const r: any = await this.client.object.listObjects({ bucketName: this.bucket, endpoint: sp });
+      const objs = r?.body?.GfSpListObjectsByBucketNameResponse?.Objects ?? [];
+      const prefix = `${draftId}/photos/`;
+      return objs.filter(
+        (o: any) => o?.ObjectInfo?.ObjectName?.startsWith(prefix) && !o?.Removed,
+      ).length;
+    } catch (e) {
+      this.logger.error(`Gagal list foto: ${(e as Error).message}`);
+      return 0;
+    }
+  }
+
+  /** Unduh satu object dari Greenfield (auth backend → bisa baca object privat). */
+  async downloadObject(objectName: string): Promise<{ data: Buffer; contentType: string } | null> {
+    if (!this.client || !this.privateKey) return null;
+    try {
+      const sp = await this.client.sp.getSPUrlByBucket(this.bucket);
+      const r = await this.client.object.getObject(
+        { bucketName: this.bucket, objectName, endpoint: sp },
+        { type: 'ECDSA', privateKey: this.privateKey },
+      );
+      if (r.code !== 0 || !r.body) return null;
+      const data = Buffer.from(await r.body.arrayBuffer());
+      return { data, contentType: this.contentTypeFor(objectName) };
+    } catch (e) {
+      this.logger.error(`Gagal download ${objectName}: ${(e as Error).message}`);
+      return null;
+    }
+  }
+
+  private contentTypeFor(objectName: string): string {
+    if (objectName.endsWith('.png')) return 'image/png';
+    if (objectName.endsWith('.gif')) return 'image/gif';
+    if (objectName.endsWith('.webp')) return 'image/webp';
+    if (objectName.endsWith('.json')) return 'application/json';
+    return 'image/jpeg';
+  }
+
   private extFromMime(mime: string): string {
     const map: Record<string, string> = {
       'image/jpeg': 'jpg',
