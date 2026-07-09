@@ -15,7 +15,42 @@ data class PassportDto(
     val remainingWarrantySeconds: Long? = null,
     val ownershipHistory: List<String> = emptyList(),
     val isFlaggedForReview: Boolean = false,
+    val recall: RecallDto? = null,
 )
+
+@Serializable
+data class RecallDto(val brand: String, val category: String, val reason: String)
+
+/** Item marketplace = passport + harga jual */
+@Serializable
+data class MarketplaceListingDto(
+    val tokenId: String,
+    val brand: String,
+    val category: String,
+    val authenticityScore: Int,
+    val priceBnb: String,
+    val price: String,
+    val seller: String,
+)
+
+@Serializable
+data class StatsDto(
+    val owned: Int,
+    val avgScore: Int,
+    val highScoreCount: Int,
+    val salesCount: Int,
+    val trustScore: Int,
+    val trustLabel: String,
+)
+
+@Serializable
+data class BalanceDto(val wei: String, val bnb: String)
+
+@Serializable
+data class ServiceRecordsDto(val records: List<String> = emptyList())
+
+@Serializable
+data class ListRequest(val priceBnb: String)
 
 @Serializable
 data class AiResultDto(
@@ -38,7 +73,7 @@ data class RegisterResponse(
 data class TransferRequest(val toAddress: String)
 
 @Serializable
-data class UnsignedTx(val to: String, val data: String)
+data class UnsignedTx(val to: String, val data: String, val value: String? = null)
 
 @Serializable
 data class TransferResponse(

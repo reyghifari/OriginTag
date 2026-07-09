@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.origintag.app.wallet.LocalWeb3Auth
+import com.origintag.app.wallet.WalletManager
 import com.web3auth.core.types.AuthConnection
 import com.web3auth.core.types.LoginParams
 
@@ -56,7 +57,11 @@ fun OnboardingScreen(
                 if (error == null) {
                     val pk = runCatching { auth.getPrivateKey() }.getOrNull()
                     if (!pk.isNullOrBlank()) {
-                        viewModel.completeLogin(pk)
+                        val profile = runCatching {
+                            val info = auth.getUserInfo()
+                            WalletManager.UserProfile(info?.name, info?.email, info?.profileImage)
+                        }.getOrNull()
+                        viewModel.completeLogin(pk, profile)
                     } else {
                         viewModel.setError("Login berhasil tapi private key kosong")
                     }

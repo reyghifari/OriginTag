@@ -51,7 +51,15 @@ class MainActivity : ComponentActivity() {
                 Log.d("MainActivity", "Web3Auth initialize: tidak ada sesi (${error.message})")
                 null
             }
-            walletManager.restoreFromWeb3Auth(pk)
+            val profile = if (!pk.isNullOrBlank()) {
+                runCatching {
+                    val info = web3Auth.getUserInfo()
+                    WalletManager.UserProfile(info?.name, info?.email, info?.profileImage)
+                }.getOrNull()
+            } else {
+                null
+            }
+            walletManager.restoreFromWeb3Auth(pk, profile)
         }
 
         // TODO(Part 5e): baca intent?.data untuk App Link origintag.app/verify/{tokenId}

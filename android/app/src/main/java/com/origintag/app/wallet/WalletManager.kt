@@ -19,10 +19,17 @@ import javax.inject.Singleton
 @Singleton
 class WalletManager @Inject constructor() {
 
+    /** Info user dari Web3Auth (social login) untuk halaman profil. */
+    data class UserProfile(
+        val name: String? = null,
+        val email: String? = null,
+        val profileImage: String? = null,
+    )
+
     sealed interface SessionState {
         /** Belum diketahui — initialize() Web3Auth masih berjalan */
         data object Checking : SessionState
-        data class LoggedIn(val address: String) : SessionState
+        data class LoggedIn(val address: String, val profile: UserProfile? = null) : SessionState
         data object LoggedOut : SessionState
     }
 
@@ -33,6 +40,10 @@ class WalletManager @Inject constructor() {
     val currentAddress: String?
         get() = (_session.value as? SessionState.LoggedIn)?.address
 
+    /** Profil user aktif (nama/email/foto dari Web3Auth), null jika mode demo. */
+    val currentProfile: UserProfile?
+        get() = (_session.value as? SessionState.LoggedIn)?.profile
+
     /** Turunkan alamat EVM dari private key secp256k1 (hex) milik Web3Auth. */
     fun addressFromPrivateKey(privateKey: String): String =
         Credentials.create(privateKey).address
@@ -41,17 +52,17 @@ class WalletManager @Inject constructor() {
      * Dipanggil MainActivity setelah web3Auth.initialize() selesai.
      * @param privateKey key dari sesi yang dipulihkan, atau null jika tidak ada sesi.
      */
-    fun restoreFromWeb3Auth(privateKey: String?) {
+    fun restoreFromWeb3Auth(privateKey: String?, profile: UserProfile? = null) {
         _session.value = if (!privateKey.isNullOrBlank()) {
-            SessionState.LoggedIn(addressFromPrivateKey(privateKey))
+            SessionState.LoggedIn(addressFromPrivateKey(privateKey), profile)
         } else {
             SessionState.LoggedOut
         }
     }
 
     /** Set sesi login (login baru via Web3Auth, atau wallet demo). */
-    fun loginWithAddress(address: String) {
-        _session.value = SessionState.LoggedIn(address)
+    fun loginWithAddress(address: String, profile: UserProfile? = null) {
+        _session.value = SessionState.LoggedIn(address, profile)
     }
 
     fun logout() {

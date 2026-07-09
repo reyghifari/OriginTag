@@ -1,7 +1,19 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Contract, JsonRpcProvider, Wallet } from 'ethers';
-import { ORIGINTAG_PASSPORT_ABI } from './abi';
+import { Contract, JsonRpcProvider, Wallet, formatEther } from 'ethers';
+import { ORIGINTAG_MARKETPLACE_ABI, ORIGINTAG_PASSPORT_ABI } from './abi';
+
+export interface MarketplaceListing extends PassportView {
+  price: string; // wei
+  priceBnb: string;
+  seller: string;
+}
+
+export interface RecallInfo {
+  brand: string;
+  category: string;
+  reason: string;
+}
 
 export interface MintParams {
   to: string;
@@ -32,9 +44,24 @@ export interface PassportView {
  * service jalan di MOCK MODE (in-memory) supaya app Android bisa dev paralel.
  */
 @Injectable()
-export class BlockchainService {
+export class BlockchainService implements OnModuleInit {
   private readonly logger = new Logger(BlockchainService.name);
   private contract?: Contract;
+  private marketplace?: Contract;
+  private provider?: JsonRpcProvider;
+  private passportAddress?: string;
+  private marketplaceAddress?: string;
+
+  // Blok awal untuk queryFilter (recall/service record) — dihindari range RPC berlebihan
+  private startBlock = 0;
+  // Cache recall (event) — refresh berkala
+  private recallsCache: { data: RecallInfo[]; ts: number } = { data: [], ts: 0 };
+  private static readonly RECALL_TTL_MS = 30_000;
+
+  // Sumber utama recall & service record: yang dipicu backend sendiri (in-memory).
+  // RPC publik BSC membatasi eth_getLogs, jadi getLogs hanya pelengkap best-effort.
+  private readonly triggeredRecalls: RecallInfo[] = [];
+  private readonly triggeredServiceRecords = new Map<string, string[]>();
 
   // ── mock mode state ──
   private mockTokenCounter = 0;
@@ -47,14 +74,30 @@ export class BlockchainService {
     const rpc = config.get<string>('BSC_RPC_URL');
     const address = config.get<string>('CONTRACT_ADDRESS');
     const pk = config.get<string>('AUTHENTICATOR_PRIVATE_KEY');
+    const marketAddress = config.get<string>('MARKETPLACE_ADDRESS');
 
     if (rpc && address && pk) {
-      const provider = new JsonRpcProvider(rpc);
-      const wallet = new Wallet(pk, provider);
+      this.provider = new JsonRpcProvider(rpc);
+      const wallet = new Wallet(pk, this.provider);
       this.contract = new Contract(address, ORIGINTAG_PASSPORT_ABI, wallet);
+      this.passportAddress = address;
       this.logger.log(`Terhubung ke kontrak ${address}`);
+      if (marketAddress) {
+        this.marketplace = new Contract(marketAddress, ORIGINTAG_MARKETPLACE_ABI, wallet);
+        this.marketplaceAddress = marketAddress;
+        this.logger.log(`Marketplace ${marketAddress}`);
+      }
     } else {
       this.logger.warn('CONTRACT_ADDRESS/AUTHENTICATOR_PRIVATE_KEY belum diset — MOCK MODE aktif');
+    }
+  }
+
+  async onModuleInit() {
+    if (this.provider) {
+      // Blok saat backend start — recall/service record demo terjadi setelah ini.
+      // Lookback aman agar aktivitas sesi sebelum restart tetap tertangkap.
+      const latest = await this.provider.getBlockNumber().catch(() => 0);
+      this.startBlock = Math.max(0, latest - 200_000);
     }
   }
 
@@ -172,6 +215,206 @@ export class BlockchainService {
       },
       note: 'Sign & kirim transaksi ini dari wallet pemilik di app Android',
     };
+  }
+
+  // ── Explore / Marketplace ────────────────────────────────────────
+
+  /** Semua passport (enumerate via ERC721Enumerable) — untuk explore. */
+  async listAllPassports(): Promise<PassportView[]> {
+    if (!this.contract) {
+      return [...this.mockStore.values()].map((p) => this.mockToView(p));
+    }
+    const total = Number(await this.contract.totalSupply());
+    const ids = await Promise.all(
+      Array.from({ length: total }, (_, i) => this.contract!.tokenByIndex(i)),
+    );
+    return Promise.all(ids.map((id) => this.getPassport(String(id))));
+  }
+
+  /** Listing aktif untuk 1 token, atau null. */
+  async getListing(
+    tokenId: string,
+  ): Promise<{ seller: string; price: string; active: boolean } | null> {
+    if (!this.marketplace) return null;
+    const l = await this.marketplace.getListing(tokenId);
+    if (!l.active) return null;
+    return { seller: l.seller, price: l.price.toString(), active: l.active };
+  }
+
+  /** Semua passport yang sedang dijual (dengan harga + data passport). */
+  async listMarketplace(): Promise<MarketplaceListing[]> {
+    if (!this.marketplace) return [];
+    const all = await this.listAllPassports();
+    const results: MarketplaceListing[] = [];
+    await Promise.all(
+      all.map(async (p) => {
+        const listing = await this.getListing(p.tokenId);
+        if (listing) {
+          results.push({
+            ...p,
+            price: listing.price,
+            priceBnb: formatEther(listing.price),
+            seller: listing.seller,
+          });
+        }
+      }),
+    );
+    return results;
+  }
+
+  // ── Tx builders (ditandatangani wallet user di app) ──────────────
+
+  buildApproveTx(tokenId: string) {
+    if (!this.contract || !this.marketplaceAddress) throw new Error('Marketplace tidak aktif');
+    const data = this.contract.interface.encodeFunctionData('approve', [
+      this.marketplaceAddress,
+      tokenId,
+    ]);
+    return { unsignedTx: { to: this.passportAddress, data }, note: 'Approve marketplace' };
+  }
+
+  buildListTx(tokenId: string, priceWei: string) {
+    if (!this.marketplace) throw new Error('Marketplace tidak aktif');
+    const data = this.marketplace.interface.encodeFunctionData('listItem', [tokenId, priceWei]);
+    return { unsignedTx: { to: this.marketplaceAddress, data }, note: 'List passport dijual' };
+  }
+
+  async buildBuyTx(tokenId: string) {
+    if (!this.marketplace) throw new Error('Marketplace tidak aktif');
+    const listing = await this.getListing(tokenId);
+    if (!listing) throw new NotFoundException('Passport tidak sedang dijual');
+    const data = this.marketplace.interface.encodeFunctionData('buyItem', [tokenId]);
+    return {
+      unsignedTx: { to: this.marketplaceAddress, data, value: listing.price },
+      note: 'Beli passport (bayar harga)',
+    };
+  }
+
+  buildCancelTx(tokenId: string) {
+    if (!this.marketplace) throw new Error('Marketplace tidak aktif');
+    const data = this.marketplace.interface.encodeFunctionData('cancelListing', [tokenId]);
+    return { unsignedTx: { to: this.marketplaceAddress, data }, note: 'Batalkan listing' };
+  }
+
+  // ── Recall (FR-11) ───────────────────────────────────────────────
+
+  async getRecalls(): Promise<RecallInfo[]> {
+    if (!this.contract) return [];
+    // Mulai dari yang dipicu backend (selalu tersedia).
+    const merged = new Map<string, RecallInfo>();
+    for (const r of this.triggeredRecalls) merged.set(`${r.brand}|${r.category}|${r.reason}`, r);
+
+    // Lengkapi dengan getLogs (best-effort; RPC publik sering menolak).
+    const now = Date.now();
+    if (now - this.recallsCache.ts >= BlockchainService.RECALL_TTL_MS) {
+      try {
+        const events = await this.contract.queryFilter(
+          this.contract.filters.RecallIssued(),
+          this.startBlock,
+          'latest',
+        );
+        this.recallsCache = {
+          data: events.map((e: any) => ({
+            brand: e.args.brand,
+            category: e.args.category,
+            reason: e.args.reason,
+          })),
+          ts: now,
+        };
+      } catch {
+        this.recallsCache = { data: this.recallsCache.data, ts: now }; // jangan spam log
+      }
+    }
+    for (const r of this.recallsCache.data) merged.set(`${r.brand}|${r.category}|${r.reason}`, r);
+    return [...merged.values()];
+  }
+
+  async isRecalled(brand: string, category: string): Promise<RecallInfo | null> {
+    const recalls = await this.getRecalls();
+    return recalls.find((r) => r.brand === brand && r.category === category) ?? null;
+  }
+
+  /** Backend (AUTHENTICATOR_ROLE) memicu recall brand+kategori. */
+  async issueRecall(brand: string, category: string, reason: string): Promise<{ txHash: string }> {
+    if (!this.contract) throw new Error('Kontrak tidak aktif');
+    const tx = await this.contract.issueRecall(brand, category, reason);
+    const receipt = await tx.wait();
+    this.triggeredRecalls.push({ brand, category, reason });
+    this.recallsCache.ts = 0; // invalidasi cache getLogs
+    return { txHash: receipt.hash };
+  }
+
+  // ── Service records (FR-10) ──────────────────────────────────────
+
+  async getServiceRecords(tokenId: string): Promise<string[]> {
+    if (!this.contract) return [];
+    const local = this.triggeredServiceRecords.get(tokenId) ?? [];
+    // Lengkapi dengan getLogs (best-effort).
+    try {
+      const events = await this.contract.queryFilter(
+        this.contract.filters.ServiceRecordAdded(tokenId),
+        this.startBlock,
+        'latest',
+      );
+      const merged = new Set<string>(local);
+      for (const e of events as any[]) merged.add(e.args.recordObjectId);
+      return [...merged];
+    } catch {
+      return local;
+    }
+  }
+
+  /** Backend (SERVICE_ROLE) menambah entri riwayat servis. */
+  async addServiceRecord(tokenId: string, recordObjectId: string): Promise<{ txHash: string }> {
+    if (!this.contract) throw new Error('Kontrak tidak aktif');
+    const tx = await this.contract.addServiceRecord(tokenId, recordObjectId);
+    const receipt = await tx.wait();
+    const list = this.triggeredServiceRecords.get(tokenId) ?? [];
+    list.push(recordObjectId);
+    this.triggeredServiceRecords.set(tokenId, list);
+    return { txHash: receipt.hash };
+  }
+
+  // ── Wallet / profil ──────────────────────────────────────────────
+
+  async getBalance(address: string): Promise<{ wei: string; bnb: string }> {
+    if (!this.provider) return { wei: '0', bnb: '0' };
+    const wei = await this.provider.getBalance(address);
+    return { wei: wei.toString(), bnb: formatEther(wei) };
+  }
+
+  async getStats(address: string): Promise<{
+    owned: number;
+    avgScore: number;
+    highScoreCount: number;
+    salesCount: number;
+    trustScore: number;
+    trustLabel: string;
+  }> {
+    const owned = await this.getPassportsByOwner(address).catch(() => []);
+    const scores = owned.map((p) => p.authenticityScore);
+    const avgScore = scores.length
+      ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+      : 0;
+    const highScoreCount = scores.filter((s) => s >= 90).length;
+
+    let salesCount = 0;
+    if (this.marketplace) {
+      try {
+        const events = await this.marketplace.queryFilter(
+          this.marketplace.filters.ItemSold(null, address),
+          this.startBlock,
+          'latest',
+        );
+        salesCount = events.length;
+      } catch {
+        /* abaikan */
+      }
+    }
+
+    const trustLabel =
+      avgScore >= 85 ? 'Terpercaya' : avgScore >= 70 ? 'Baik' : owned.length ? 'Pemula' : 'Baru';
+    return { owned: owned.length, avgScore, highScoreCount, salesCount, trustScore: avgScore, trustLabel };
   }
 
   private mockToView(

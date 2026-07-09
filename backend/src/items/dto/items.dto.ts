@@ -35,3 +35,23 @@ export class TransferItemDto {
   @Matches(ETH_ADDRESS, { message: 'toAddress harus alamat EVM valid' })
   toAddress!: string;
 }
+
+export class ServiceRecordDto {
+  @IsString()
+  @IsNotEmpty()
+  note!: string;
+}
+
+export class RecallDto {
+  @IsString()
+  @IsNotEmpty()
+  brand!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  category!: string;
+
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
+}

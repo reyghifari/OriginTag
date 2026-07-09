@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { Response } from 'express';
-import { RegisterItemDto, TransferItemDto } from './dto/items.dto';
+import { RecallDto, RegisterItemDto, ServiceRecordDto, TransferItemDto } from './dto/items.dto';
 import { ItemsService } from './items.service';
 
 /** Endpoint sesuai PRD §12 */
@@ -38,6 +38,24 @@ export class ItemsController {
   @Post(':tokenId/transfer')
   transfer(@Param('tokenId') tokenId: string, @Body() dto: TransferItemDto) {
     return this.items.transfer(tokenId, dto);
+  }
+
+  /** Trigger recall brand+kategori (FR-11) — dipanggil brand/admin */
+  @Post('recall')
+  recall(@Body() dto: RecallDto) {
+    return this.items.issueRecall(dto.brand, dto.category, dto.reason);
+  }
+
+  /** Riwayat servis passport (FR-10) */
+  @Get(':tokenId/service-records')
+  serviceRecords(@Param('tokenId') tokenId: string) {
+    return this.items.getServiceRecords(tokenId);
+  }
+
+  /** Tambah entri riwayat servis (service center) */
+  @Post(':tokenId/service-records')
+  addServiceRecord(@Param('tokenId') tokenId: string, @Body() dto: ServiceRecordDto) {
+    return this.items.addServiceRecord(tokenId, dto.note);
   }
 
   /** Sisa masa garansi terkini (FR-08) */

@@ -64,18 +64,18 @@ contract OriginTagPassport is ERC721Enumerable, AccessControl, ReentrancyGuard {
         p.warrantyDurationSeconds = warrantyDurationSeconds;
         p.authenticityScore = authenticityScore;
         p.evidenceObjectId = evidenceObjectId;
-        _ownershipHistory[tokenId].push(to);
+        // ownershipHistory dicatat otomatis di _update() saat _safeMint di atas.
 
         emit PassportMinted(tokenId, to, authenticityScore);
         return tokenId;
     }
 
-    /// @notice Transfer passport saat barang terjual (FR-07). Validasi kepemilikan
-    ///         dilakukan on-chain, bukan di backend (PRD §8.1).
+    /// @notice Transfer passport P2P langsung saat barang terjual (FR-07). Validasi
+    ///         kepemilikan on-chain (PRD §8.1). ownershipHistory dicatat di _update().
+    ///         Transfer lewat marketplace (safeTransferFrom) juga terekam via _update().
     function transferPassport(uint256 tokenId, address to) external nonReentrant {
         require(ownerOf(tokenId) == msg.sender, "OriginTag: bukan pemilik passport");
         _safeTransfer(msg.sender, to, tokenId, "");
-        _ownershipHistory[tokenId].push(to);
         emit PassportTransferred(tokenId, msg.sender, to);
     }
 
@@ -114,6 +114,28 @@ contract OriginTagPassport is ERC721Enumerable, AccessControl, ReentrancyGuard {
         onlyRole(AUTHENTICATOR_ROLE)
     {
         emit RecallIssued(brand, category, reason);
+    }
+
+    /// @dev Hook transfer OZ v5 — dipanggil di SEMUA jalur (mint, transferPassport,
+    ///      dan safeTransferFrom marketplace). Di sinilah ownershipHistory dicatat,
+    ///      sehingga penjualan lewat marketplace pun terekam riwayatnya.
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721Enumerable)
+        returns (address)
+    {
+        address from = super._update(to, tokenId, auth);
+        if (to != address(0)) {
+            _ownershipHistory[tokenId].push(to);
+        }
+        return from;
+    }
+
+    function _increaseBalance(address account, uint128 value)
+        internal
+        override(ERC721Enumerable)
+    {
+        super._increaseBalance(account, value);
     }
 
     function supportsInterface(bytes4 interfaceId)

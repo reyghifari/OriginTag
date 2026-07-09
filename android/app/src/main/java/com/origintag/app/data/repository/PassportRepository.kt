@@ -34,6 +34,23 @@ class PassportRepository @Inject constructor(
     suspend fun transfer(tokenId: String, toAddress: String) =
         api.transferPassport(tokenId, TransferRequest(toAddress))
 
+    // ── Profil ──
+    suspend fun getStats(address: String) = api.getStats(address)
+    suspend fun getBalance(address: String) = api.getBalance(address)
+
+    // ── Marketplace & explore ──
+    suspend fun getMarketplace() = api.getMarketplace()
+    suspend fun explore(brand: String?, category: String?, minScore: Int?) =
+        api.explore(brand?.ifBlank { null }, category?.ifBlank { null }, minScore)
+    suspend fun approveTx(tokenId: String) = api.approveTx(tokenId)
+    suspend fun listTx(tokenId: String, priceBnb: String) =
+        api.listTx(tokenId, com.origintag.app.data.model.ListRequest(priceBnb))
+    suspend fun buyTx(tokenId: String) = api.buyTx(tokenId)
+    suspend fun cancelTx(tokenId: String) = api.cancelTx(tokenId)
+
+    // ── Service records ──
+    suspend fun getServiceRecords(tokenId: String) = api.getServiceRecords(tokenId)
+
     /**
      * Part 5b — kompres tiap foto (JPEG quality ~80, longest edge maks 1600px untuk
      * menekan ukuran upload dari kamera HP) lalu kirim multipart ke /items/register.

@@ -51,12 +51,12 @@ class OnboardingViewModel @Inject constructor(
         _uiState.update { it.copy(loading = false, error = message) }
 
     /** Dipanggil setelah Web3Auth login sukses; turunkan alamat & set sesi login. */
-    fun completeLogin(privateKey: String) {
+    fun completeLogin(privateKey: String, profile: WalletManager.UserProfile? = null) {
         viewModelScope.launch {
             runCatching { walletManager.addressFromPrivateKey(privateKey) }
                 .onSuccess { address ->
                     _uiState.update { it.copy(loading = false) }
-                    walletManager.loginWithAddress(address) // memicu loggedIn via collector
+                    walletManager.loginWithAddress(address, profile) // memicu loggedIn via collector
                 }
                 .onFailure { e -> setError(e.message ?: "Gagal memproses wallet") }
         }

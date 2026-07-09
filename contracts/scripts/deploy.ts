@@ -10,7 +10,6 @@ async function main() {
 
   const address = await contract.getAddress();
   console.log("OriginTagPassport deployed:", address);
-  console.log("Salin address ini ke backend/.env → CONTRACT_ADDRESS");
 
   // Beri AUTHENTICATOR_ROLE ke wallet backend jika diset di .env
   const backend = process.env.BACKEND_AUTHENTICATOR_ADDRESS;
@@ -21,6 +20,19 @@ async function main() {
   } else {
     console.log("BACKEND_AUTHENTICATOR_ADDRESS kosong — jangan lupa grantRole manual untuk wallet backend");
   }
+
+  // Deploy marketplace (escrow) yang menunjuk ke passport ini.
+  const feeRecipient = process.env.MARKETPLACE_FEE_RECIPIENT ?? deployer.address;
+  const feeBps = Number(process.env.MARKETPLACE_FEE_BPS ?? 200); // 2%
+  const marketFactory = await ethers.getContractFactory("OriginTagMarketplace");
+  const market = await marketFactory.deploy(address, feeRecipient, feeBps);
+  await market.waitForDeployment();
+  const marketAddress = await market.getAddress();
+  console.log("OriginTagMarketplace deployed:", marketAddress);
+
+  console.log("\n=== Update backend/.env ===");
+  console.log(`CONTRACT_ADDRESS=${address}`);
+  console.log(`MARKETPLACE_ADDRESS=${marketAddress}`);
 }
 
 main().catch((error) => {

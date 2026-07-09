@@ -59,8 +59,26 @@ export class ItemsService {
     };
   }
 
-  getPublicPassport(tokenId: string) {
-    return this.blockchain.getPassport(tokenId);
+  /** Passport publik + status recall (untuk banner di app & halaman verify). */
+  async getPublicPassport(tokenId: string) {
+    const passport = await this.blockchain.getPassport(tokenId);
+    const recall = await this.blockchain.isRecalled(passport.brand, passport.category);
+    return { ...passport, recall };
+  }
+
+  /** Daftar riwayat servis (FR-10) */
+  async getServiceRecords(tokenId: string) {
+    return { records: await this.blockchain.getServiceRecords(tokenId) };
+  }
+
+  /** Tambah riwayat servis (backend SERVICE_ROLE) */
+  addServiceRecord(tokenId: string, note: string) {
+    return this.blockchain.addServiceRecord(tokenId, note);
+  }
+
+  /** Trigger recall brand+kategori (backend AUTHENTICATOR_ROLE) */
+  issueRecall(brand: string, category: string, reason: string) {
+    return this.blockchain.issueRecall(brand, category, reason);
   }
 
   /**

@@ -26,12 +26,15 @@ class TransactionSigner @Inject constructor() {
 
     /**
      * Kirim transaksi ke `toContract` dengan `data` (calldata dari backend),
-     * ditandatangani `privateKey`. Mengembalikan tx hash.
+     * ditandatangani `privateKey`. `valueWei` = jumlah BNB (wei desimal) yang dikirim
+     * — dipakai untuk buyItem marketplace; null/0 untuk transfer/approve/list.
+     * Mengembalikan tx hash.
      */
     suspend fun signAndSend(
         toContract: String,
         data: String,
         privateKey: String,
+        valueWei: String? = null,
     ): String = withContext(Dispatchers.IO) {
         val credentials = Credentials.create(privateKey)
 
@@ -40,14 +43,15 @@ class TransactionSigner @Inject constructor() {
             .send()
             .transactionCount
         val gasPrice = web3j.ethGasPrice().send().gasPrice
-        val gasLimit = BigInteger.valueOf(200_000)
+        val gasLimit = BigInteger.valueOf(250_000)
+        val value = if (valueWei.isNullOrBlank()) BigInteger.ZERO else BigInteger(valueWei)
 
         val rawTx = RawTransaction.createTransaction(
             nonce,
             gasPrice,
             gasLimit,
             toContract,
-            BigInteger.ZERO, // transferPassport tidak mengirim BNB
+            value,
             data,
         )
 

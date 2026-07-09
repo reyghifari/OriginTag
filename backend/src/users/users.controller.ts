@@ -10,4 +10,16 @@ export class UsersController {
   getPassports(@Param('walletAddress') walletAddress: string) {
     return this.blockchain.getPassportsByOwner(walletAddress);
   }
+
+  /** Statistik & trust score untuk halaman profil */
+  @Get(':walletAddress/stats')
+  getStats(@Param('walletAddress') walletAddress: string) {
+    return this.blockchain.getStats(walletAddress);
+  }
+
+  /** Saldo tBNB wallet (untuk profil / info gas) */
+  @Get(':walletAddress/balance')
+  getBalance(@Param('walletAddress') walletAddress: string) {
+    return this.blockchain.getBalance(walletAddress);
+  }
 }
