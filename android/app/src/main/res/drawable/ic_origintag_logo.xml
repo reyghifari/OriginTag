@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Logo OriginTag: hangtag + centang keaslian. Sumber: branding/logo.svg -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.85"
+        android:scaleY="0.85">
+        <group
+            android:translateX="5"
+            android:translateY="-4.5">
+            <group
+                android:pivotX="54"
+                android:pivotY="54"
+                android:rotation="45">
+                <path
+                    android:fillColor="#0B0E11"
+                    android:pathData="M50.5,25.5 Q54,22 57.5,25.5 L71,39 L71,80 Q71,85 66,85 L42,85 Q37,85 37,80 L37,39 Z" />
+                <path
+                    android:fillColor="#F0B90B"
+                    android:pathData="M49.5,37 a4.5,4.5 0 1,0 9,0 a4.5,4.5 0 1,0 -9,0" />
+            </group>
+            <path
+                android:pathData="M40,60 L46.5,66.5 L58,54"
+                android:strokeColor="#F0B90B"
+                android:strokeWidth="5"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round" />
+        </group>
+    </group>
+</vector>

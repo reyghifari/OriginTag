@@ -1,6 +1,14 @@
 package com.origintag.app.feature.onboarding
 
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
+import com.origintag.app.R
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -78,7 +86,16 @@ fun OnboardingScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Text("🏷️ OriginTag", style = MaterialTheme.typography.headlineLarge)
+        Image(
+            painter = painterResource(R.drawable.ic_origintag_logo),
+            contentDescription = "Logo OriginTag",
+            modifier = Modifier
+                .size(112.dp)
+                .clip(RoundedCornerShape(28.dp))
+                .background(Color(0xFFF0B90B)),
+        )
+        Spacer(Modifier.height(16.dp))
+        Text("OriginTag", style = MaterialTheme.typography.headlineLarge)
         Text(
             "Digital passport untuk barang fisik",
             style = MaterialTheme.typography.bodyMedium,
