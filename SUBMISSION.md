@@ -134,7 +134,10 @@ Verified end-to-end on BSC Testnet: item registration with an AI score, passport
 ---
 
 ## GITHUB REPO (public)
-`⚠️ FILL YOURSELF` — push to GitHub first, then paste the repo URL. (Not pushed yet.)
+```
+https://github.com/reyghifari/OriginTag
+```
+⚠️ Make sure the repo is set to **Public** before submitting.
 
 ## PROJECT WEBSITE
 `⚠️ FILL YOURSELF / leave blank` — optional.
