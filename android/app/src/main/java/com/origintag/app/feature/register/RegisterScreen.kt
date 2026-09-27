@@ -1,5 +1,7 @@
 package com.origintag.app.feature.register
 
+import com.origintag.app.ui.components.OtTopBar
+
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -52,7 +54,7 @@ fun RegisterScreen(
     ) { uris -> viewModel.setPhotos(uris) }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Daftarkan Barang") }) },
+        topBar = { OtTopBar("Daftarkan Barang") },
     ) { padding ->
         Column(
             modifier = Modifier

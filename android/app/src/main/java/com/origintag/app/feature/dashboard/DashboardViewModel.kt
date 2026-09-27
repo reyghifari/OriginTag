@@ -3,6 +3,7 @@ package com.origintag.app.feature.dashboard
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.origintag.app.data.model.PassportDto
+import com.origintag.app.data.model.StatsDto
 import com.origintag.app.data.repository.PassportRepository
 import com.origintag.app.wallet.WalletManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,6 +31,9 @@ class DashboardViewModel @Inject constructor(
         val walletAddress: String? = null,
         val passports: List<PassportDto> = emptyList(),
         val error: String? = null,
+        val name: String? = null,
+        val avatar: String? = null,
+        val stats: StatsDto? = null,
     )
 
     private val _uiState = MutableStateFlow(UiState())
@@ -39,7 +43,13 @@ class DashboardViewModel @Inject constructor(
     fun load() {
         viewModelScope.launch {
             val address = walletManager.currentAddress ?: DEMO_WALLET
-            _uiState.update { it.copy(loading = true, error = null, walletAddress = address) }
+            val profile = walletManager.currentProfile
+            _uiState.update {
+                it.copy(loading = true, error = null, walletAddress = address, name = profile?.name, avatar = profile?.profileImage)
+            }
+            launch {
+                runCatching { repository.getStats(address) }.onSuccess { s -> _uiState.update { it.copy(stats = s) } }
+            }
             runCatching { repository.getPassports(address) }
                 .onSuccess { list ->
                     _uiState.update { it.copy(loading = false, passports = list) }

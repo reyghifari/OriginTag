@@ -1,5 +1,7 @@
 package com.origintag.app.feature.scan
 
+import com.origintag.app.ui.components.OtTopBar
+
 import android.Manifest
 import android.content.pm.PackageManager
 import androidx.camera.core.CameraSelector
@@ -59,7 +61,7 @@ fun ScanScreen(onResult: (String) -> Unit) {
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Scan QR") }) },
+        topBar = { OtTopBar("Scan QR") },
     ) { padding ->
         Box(
             modifier = Modifier

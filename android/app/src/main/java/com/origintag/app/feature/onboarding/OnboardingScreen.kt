@@ -1,5 +1,6 @@
 package com.origintag.app.feature.onboarding
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +10,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import com.origintag.app.R
+import com.origintag.app.ui.theme.Ot
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
@@ -82,6 +85,7 @@ fun OnboardingScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .background(Ot.Blue)
             .padding(24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -95,42 +99,48 @@ fun OnboardingScreen(
                 .background(Color(0xFFF0B90B)),
         )
         Spacer(Modifier.height(16.dp))
-        Text("OriginTag", style = MaterialTheme.typography.headlineLarge)
+        Text("ORIGINTAG", style = MaterialTheme.typography.displaySmall, color = Color.White)
         Text(
             "Digital passport untuk barang fisik",
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.titleMedium,
+            color = Color.White.copy(alpha = .7f),
         )
         Spacer(Modifier.height(40.dp))
 
         if (state.checkingSession) {
-            CircularProgressIndicator()
+            CircularProgressIndicator(color = Color.White)
         } else if (state.loading) {
-            CircularProgressIndicator()
-            Text("Menghubungkan wallet...", Modifier.padding(top = 12.dp))
+            CircularProgressIndicator(color = Color.White)
+            Text("Menghubungkan wallet...", Modifier.padding(top = 12.dp), color = Color.White)
         } else {
             Button(
                 onClick = { login(AuthConnection.GOOGLE) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(18.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White, contentColor = Ot.Navy),
             ) {
                 Text("Masuk dengan Google")
             }
             Spacer(Modifier.height(8.dp))
             OutlinedButton(
                 onClick = { login(AuthConnection.EMAIL_PASSWORDLESS) },
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                shape = RoundedCornerShape(18.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = .5f)),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
             ) {
                 Text("Masuk dengan Email")
             }
             Spacer(Modifier.height(16.dp))
             TextButton(onClick = { viewModel.skipWithDemoWallet() }) {
-                Text("Lewati (mode demo)")
+                Text("Lewati (mode demo)", color = Color.White.copy(alpha = .7f))
             }
         }
 
         state.error?.let {
             Text(
                 it,
-                color = MaterialTheme.colorScheme.error,
+                color = Color(0xFFFFD2CC),
                 modifier = Modifier.padding(top = 16.dp),
             )
         }

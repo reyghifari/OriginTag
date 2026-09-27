@@ -1,5 +1,7 @@
 package com.origintag.app.feature.transfer
 
+import com.origintag.app.ui.components.OtTopBar
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -48,7 +50,7 @@ fun TransferScreen(
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("Transfer Passport #$tokenId") }) },
+        topBar = { OtTopBar("Transfer Passport #$tokenId") },
     ) { padding ->
         Column(
             modifier = Modifier

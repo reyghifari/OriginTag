@@ -1,13 +1,24 @@
 package com.origintag.app.navigation
 
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.ShoppingCart
+import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -24,6 +35,7 @@ import com.origintag.app.feature.profile.ProfileScreen
 import com.origintag.app.feature.register.RegisterScreen
 import com.origintag.app.feature.scan.ScanScreen
 import com.origintag.app.feature.transfer.TransferScreen
+import com.origintag.app.ui.theme.Ot
 
 object Routes {
     const val ONBOARDING = "onboarding"
@@ -38,11 +50,11 @@ object Routes {
 }
 
 /** Tab bottom-nav dalam MAIN */
-private enum class Tab(val route: String, val label: String, val emoji: String) {
-    DASHBOARD("tab_dashboard", "Barang", "👜"),
-    EXPLORE("tab_explore", "Explore", "🔍"),
-    MARKETPLACE("tab_market", "Market", "🏷️"),
-    PROFILE("tab_profile", "Profil", "👤"),
+private enum class Tab(val route: String, val label: String, val icon: ImageVector) {
+    DASHBOARD("tab_dashboard", "Barang", Icons.Outlined.Home),
+    EXPLORE("tab_explore", "Explore", Icons.Outlined.Search),
+    MARKETPLACE("tab_market", "Market", Icons.Outlined.ShoppingCart),
+    PROFILE("tab_profile", "Profil", Icons.Outlined.Person),
 }
 
 @Composable
@@ -97,22 +109,29 @@ private fun MainScaffold(rootNav: NavHostController) {
     val tabNav = rememberNavController()
     val backStack by tabNav.currentBackStackEntryAsState()
     val currentRoute = backStack?.destination?.route
+    fun go(tab: Tab) = tabNav.navigate(tab.route) {
+        popUpTo(tabNav.graph.startDestinationId) { saveState = true }
+        launchSingleTop = true
+        restoreState = true
+    }
 
     Scaffold(
+        containerColor = Ot.Paper,
+        // header biru tiap tab menggambar dirinya sendiri di bawah status bar
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = Ot.NavBar, tonalElevation = 0.dp) {
                 Tab.entries.forEach { tab ->
                     NavigationBarItem(
                         selected = currentRoute == tab.route,
-                        onClick = {
-                            tabNav.navigate(tab.route) {
-                                popUpTo(tabNav.graph.startDestinationId) { saveState = true }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
-                        },
-                        icon = { Text(tab.emoji) },
-                        label = { Text(tab.label) },
+                        onClick = { go(tab) },
+                        icon = { Icon(tab.icon, contentDescription = tab.label, modifier = Modifier.size(26.dp)) },
+                        alwaysShowLabel = false,
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = Ot.Blue,
+                            unselectedIconColor = Ot.Muted,
+                            indicatorColor = Color.Transparent,
+                        ),
                     )
                 }
             }
@@ -128,6 +147,8 @@ private fun MainScaffold(rootNav: NavHostController) {
                     onRegisterClick = { rootNav.navigate(Routes.REGISTER) },
                     onScanClick = { rootNav.navigate(Routes.SCAN) },
                     onPassportClick = { tokenId -> rootNav.navigate(Routes.passportDetail(tokenId)) },
+                    onMarketClick = { go(Tab.MARKETPLACE) },
+                    onExploreClick = { go(Tab.EXPLORE) },
                 )
             }
             composable(Tab.EXPLORE.route) {
