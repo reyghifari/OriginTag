@@ -37,7 +37,7 @@ class ExploreViewModel @Inject constructor(
             _uiState.update { it.copy(loading = true, error = null) }
             val q = _uiState.value.query
             runCatching { repository.explore(brand = q, category = null, minScore = null) }
-                .onSuccess { list -> _uiState.update { it.copy(loading = false, items = list) } }
+                .onSuccess { list -> _uiState.update { it.copy(loading = false, items = list.sortedByDescending { p -> p.tokenId.toLongOrNull() ?: 0 }) } }
                 .onFailure { e -> _uiState.update { it.copy(loading = false, error = e.message) } }
         }
     }

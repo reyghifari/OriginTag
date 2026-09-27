@@ -52,7 +52,7 @@ class DashboardViewModel @Inject constructor(
             }
             runCatching { repository.getPassports(address) }
                 .onSuccess { list ->
-                    _uiState.update { it.copy(loading = false, passports = list) }
+                    _uiState.update { it.copy(loading = false, passports = list.sortedByDescending { p -> p.tokenId.toLongOrNull() ?: 0 }) }
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(loading = false, error = e.message ?: "Gagal memuat") }
