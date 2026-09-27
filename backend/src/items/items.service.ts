@@ -45,12 +45,12 @@ export class ItemsService {
       evidenceObjectId,
     });
 
-    // Render mengisi RENDER_EXTERNAL_URL, Hugging Face Spaces mengisi SPACE_HOST (tanpa skema).
-    const spaceHost = this.config.get<string>('SPACE_HOST');
+    // Render mengisi RENDER_EXTERNAL_URL; Vercel mengisi VERCEL_PROJECT_PRODUCTION_URL (tanpa skema).
+    const vercelHost = this.config.get<string>('VERCEL_PROJECT_PRODUCTION_URL');
     const baseUrl =
       this.config.get('PUBLIC_VERIFY_BASE_URL') ??
       this.config.get('RENDER_EXTERNAL_URL') ??
-      (spaceHost ? `https://${spaceHost}` : 'http://localhost:3000');
+      (vercelHost ? `https://${vercelHost}` : 'http://localhost:3000');
     return {
       status: 'minted',
       tokenId,
