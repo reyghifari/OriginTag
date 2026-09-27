@@ -7,7 +7,7 @@
 <p align="center"><b>A digital passport for every physical product — on BNB Chain.</b></p>
 
 <p align="center">
-  <a href="https://drive.google.com/file/d/13_7s_yVODq9j0pPrzVbWBN31GqKzMSxr/view?usp=drivesdk">Download APK</a> ·
+  <a href="https://drive.google.com/file/d/1DYKtE0vr5Kq2Fxc_RFq4QFHXKVzZKCXx/view?usp=sharing">Download APK</a> ·
   <a href="pitch/OriginTag-Demo.mp4">Demo video</a> ·
   <a href="pitch/OriginTag-Pitch-Deck.pptx">Pitch deck</a> ·
   <a href="https://origintag-api.vercel.app/marketplace">Live API</a>
@@ -66,7 +66,7 @@ OriginTag/
 
 ## Try it
 
-1. Download the [APK](https://drive.google.com/file/d/13_7s_yVODq9j0pPrzVbWBN31GqKzMSxr/view?usp=drivesdk) and allow installs from unknown sources.
+1. Download the [APK](https://drive.google.com/file/d/1DYKtE0vr5Kq2Fxc_RFq4QFHXKVzZKCXx/view?usp=sharing) and allow installs from unknown sources.
 2. Sign in with Google (or tap **Lewati (mode demo)** to look around without a wallet).
 3. Explore passports, register an item, or open the marketplace.
 
