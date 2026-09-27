@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.origintag.app.data.model.MarketplaceListingDto
 import com.origintag.app.data.repository.PassportRepository
+import com.origintag.app.ui.components.TxResult
 import com.origintag.app.wallet.TransactionSigner
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,7 +25,7 @@ class MarketplaceViewModel @Inject constructor(
         val loading: Boolean = false,
         val listings: List<MarketplaceListingDto> = emptyList(),
         val buyingTokenId: String? = null,
-        val message: String? = null,
+        val result: TxResult? = null,
         val error: String? = null,
     )
 
@@ -43,21 +44,38 @@ class MarketplaceViewModel @Inject constructor(
     /** Beli passport: ambil buy-tx, tanda tangani (bayar harga), refresh. */
     fun buy(tokenId: String, privateKey: String) {
         if (privateKey.isBlank()) {
-            _uiState.update { it.copy(error = "Login dulu untuk membeli") }
+            _uiState.update { it.copy(result = TxResult(false, "Belum login", "Login dulu untuk membeli.")) }
             return
         }
+        val brand = _uiState.value.listings.firstOrNull { it.tokenId == tokenId }?.brand ?: "Barang"
         viewModelScope.launch {
-            _uiState.update { it.copy(buyingTokenId = tokenId, message = null, error = null) }
+            _uiState.update { it.copy(buyingTokenId = tokenId, result = null) }
             runCatching {
                 val resp = repository.buyTx(tokenId)
                 val tx = resp.unsignedTx ?: error("Item tidak dijual")
-                signer.signAndSend(tx.to, tx.data, privateKey, tx.value)
-            }.onSuccess {
-                _uiState.update { it.copy(buyingTokenId = null, message = "Berhasil dibeli!") }
+                signer.signAndSend(tx.to, tx.data, privateKey, tx.value) // menunggu tx masuk blok
+            }.onSuccess { hash ->
+                _uiState.update { s ->
+                    s.copy(
+                        buyingTokenId = null,
+                        listings = s.listings.filterNot { it.tokenId == tokenId },
+                        result = TxResult(
+                            true,
+                            "Pembelian berhasil!",
+                            "$brand kini milikmu. Riwayat kepemilikan sudah tercatat on-chain.",
+                            hash,
+                            tokenId,
+                        ),
+                    )
+                }
                 load()
             }.onFailure { e ->
-                _uiState.update { it.copy(buyingTokenId = null, error = e.message ?: "Gagal beli") }
+                _uiState.update {
+                    it.copy(buyingTokenId = null, result = TxResult(false, "Pembelian gagal", e.message ?: "Gagal beli"))
+                }
             }
         }
     }
+
+    fun dismissResult() = _uiState.update { it.copy(result = null) }
 }

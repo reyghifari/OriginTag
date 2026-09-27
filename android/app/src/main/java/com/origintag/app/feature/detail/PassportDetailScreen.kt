@@ -1,6 +1,7 @@
 package com.origintag.app.feature.detail
 
 import com.origintag.app.ui.components.OtTopBar
+import com.origintag.app.ui.components.TxResultDialog
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -80,10 +81,16 @@ fun PassportDetailScreen(
                         val pk = web3Auth?.let { runCatching { it.getPrivateKey() }.getOrNull() }.orEmpty()
                         viewModel.sell(tokenId, priceBnb, pk)
                     },
+                    onCancelListing = {
+                        val pk = web3Auth?.let { runCatching { it.getPrivateKey() }.getOrNull() }.orEmpty()
+                        viewModel.cancelListing(tokenId, pk)
+                    },
                 )
             }
         }
     }
+
+    state.result?.let { TxResultDialog(it, onDismiss = viewModel::dismissResult) }
 }
 
 @Composable
@@ -91,6 +98,7 @@ private fun PassportDetail(
     state: PassportDetailViewModel.UiState,
     onTransferClick: () -> Unit,
     onSell: (String) -> Unit,
+    onCancelListing: () -> Unit,
 ) {
     val passport = state.passport ?: return
     var priceBnb by rememberSaveable { mutableStateOf("") }
@@ -161,8 +169,26 @@ private fun PassportDetail(
             }
         }
 
-        // Aksi pemilik: jual + transfer
-        if (state.isOwner) {
+        // Aksi pemilik: jual / batalkan listing + transfer
+        if (state.isOwner && state.listingPriceBnb != null) {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Sedang dijual di Pasar", style = MaterialTheme.typography.titleMedium)
+                    Text("${state.listingPriceBnb} tBNB", style = MaterialTheme.typography.headlineSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(
+                        "Batalkan listing dulu untuk mengubah harga atau mentransfer barang.",
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                    OutlinedButton(
+                        onClick = onCancelListing,
+                        enabled = !state.cancelling,
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(if (state.cancelling) "Membatalkan..." else "Batalkan listing")
+                    }
+                }
+            }
+        } else if (state.isOwner) {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Jual di Marketplace", style = MaterialTheme.typography.titleMedium)
@@ -187,8 +213,6 @@ private fun PassportDetail(
             }
         }
 
-        state.message?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
-        state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
     }
 }
 

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.origintag.app.BuildConfig
 import com.origintag.app.data.model.PassportDto
 import com.origintag.app.data.repository.PassportRepository
+import com.origintag.app.ui.components.TxResult
 import com.origintag.app.wallet.TransactionSigner
 import com.origintag.app.wallet.WalletManager
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -30,7 +31,10 @@ class PassportDetailViewModel @Inject constructor(
         val serviceRecords: List<String> = emptyList(),
         val isOwner: Boolean = false,
         val selling: Boolean = false,
-        val message: String? = null,
+        /** Harga listing aktif di marketplace (null = tidak sedang dijual). */
+        val listingPriceBnb: String? = null,
+        val cancelling: Boolean = false,
+        val result: TxResult? = null,
         val error: String? = null,
     )
 
@@ -47,6 +51,7 @@ class PassportDetailViewModel @Inject constructor(
                     _uiState.update { it.copy(loading = false, passport = p, isOwner = isOwner) }
                     loadPhotos(tokenId)
                     loadServiceRecords(tokenId)
+                    loadListing(tokenId)
                 }
                 .onFailure { e ->
                     _uiState.update { it.copy(loading = false, error = e.message ?: "Gagal memuat") }
@@ -64,6 +69,14 @@ class PassportDetailViewModel @Inject constructor(
             }
     }
 
+    // ponytail: ambil semua listing lalu cari tokenId; tambah endpoint GET /marketplace/:id bila listing banyak.
+    private suspend fun loadListing(tokenId: String) {
+        runCatching { repository.getMarketplace() }
+            .onSuccess { list ->
+                _uiState.update { it.copy(listingPriceBnb = list.firstOrNull { l -> l.tokenId == tokenId }?.priceBnb) }
+            }
+    }
+
     private suspend fun loadServiceRecords(tokenId: String) {
         runCatching { repository.getServiceRecords(tokenId) }
             .onSuccess { r -> _uiState.update { it.copy(serviceRecords = r.records) } }
@@ -72,21 +85,60 @@ class PassportDetailViewModel @Inject constructor(
     /** Jual: approve marketplace lalu listItem (2 tx), ditandatangani wallet pemilik. */
     fun sell(tokenId: String, priceBnb: String, privateKey: String) {
         if (privateKey.isBlank()) {
-            _uiState.update { it.copy(error = "Login dulu untuk menjual") }
+            _uiState.update { it.copy(result = TxResult(false, "Belum login", "Login dulu untuk menjual.")) }
             return
         }
+        val brand = _uiState.value.passport?.brand ?: "Barang"
         viewModelScope.launch {
-            _uiState.update { it.copy(selling = true, message = null, error = null) }
+            _uiState.update { it.copy(selling = true, result = null) }
             runCatching {
                 val approve = repository.approveTx(tokenId).unsignedTx ?: error("approve gagal")
                 signer.signAndSend(approve.to, approve.data, privateKey)
                 val list = repository.listTx(tokenId, priceBnb).unsignedTx ?: error("list gagal")
                 signer.signAndSend(list.to, list.data, privateKey)
-            }.onSuccess {
-                _uiState.update { it.copy(selling = false, message = "Berhasil dijual di marketplace!") }
+            }.onSuccess { hash ->
+                _uiState.update {
+                    it.copy(
+                        selling = false,
+                        listingPriceBnb = priceBnb,
+                        result = TxResult(true, "Berhasil dipasang!", "$brand kini tampil di Pasar seharga $priceBnb tBNB.", hash),
+                    )
+                }
             }.onFailure { e ->
-                _uiState.update { it.copy(selling = false, error = e.message ?: "Gagal menjual") }
+                _uiState.update {
+                    it.copy(selling = false, result = TxResult(false, "Gagal memasang", e.message ?: "Gagal menjual"))
+                }
             }
         }
     }
+
+    /** Batalkan listing (hanya seller), ditandatangani wallet pemilik. */
+    fun cancelListing(tokenId: String, privateKey: String) {
+        if (privateKey.isBlank()) {
+            _uiState.update { it.copy(result = TxResult(false, "Belum login", "Login dulu untuk membatalkan.")) }
+            return
+        }
+        val brand = _uiState.value.passport?.brand ?: "Barang"
+        viewModelScope.launch {
+            _uiState.update { it.copy(cancelling = true, result = null) }
+            runCatching {
+                val tx = repository.cancelTx(tokenId).unsignedTx ?: error("cancel gagal")
+                signer.signAndSend(tx.to, tx.data, privateKey)
+            }.onSuccess { hash ->
+                _uiState.update {
+                    it.copy(
+                        cancelling = false,
+                        listingPriceBnb = null,
+                        result = TxResult(true, "Listing dibatalkan", "$brand tidak lagi dijual di Pasar.", hash),
+                    )
+                }
+            }.onFailure { e ->
+                _uiState.update {
+                    it.copy(cancelling = false, result = TxResult(false, "Gagal membatalkan", e.message ?: "Gagal"))
+                }
+            }
+        }
+    }
+
+    fun dismissResult() = _uiState.update { it.copy(result = null) }
 }

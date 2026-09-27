@@ -33,6 +33,7 @@ import com.origintag.app.data.model.MarketplaceListingDto
 import com.origintag.app.ui.components.OtCard
 import com.origintag.app.ui.components.ScreenHeader
 import com.origintag.app.ui.components.SectionTitle
+import com.origintag.app.ui.components.TxResultDialog
 import com.origintag.app.ui.theme.Ot
 import com.origintag.app.wallet.LocalWeb3Auth
 
@@ -82,8 +83,13 @@ fun MarketplaceScreen(
             }
         }
 
-        state.message?.let {
-            Text(it, Modifier.align(Alignment.BottomCenter).padding(16.dp), color = MaterialTheme.colorScheme.primary)
+        state.result?.let { r ->
+            TxResultDialog(
+                result = r,
+                onDismiss = viewModel::dismissResult,
+                primaryLabel = if (r.success) "Lihat barang" else null,
+                onPrimary = r.tokenId?.let { id -> { viewModel.dismissResult(); onItemClick(id) } },
+            )
         }
     }
 }

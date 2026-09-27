@@ -37,7 +37,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -78,29 +77,29 @@ fun DashboardScreen(
     LaunchedEffect(Unit) { viewModel.load() }
 
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
-        BlueHeader {
+        BlueHeader(slant = 40.dp) {
             WalletPill(state.walletAddress.orEmpty())
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(16.dp))
             DateRow(onScanClick)
-            Spacer(Modifier.height(20.dp))
+            Spacer(Modifier.height(10.dp))
             Greeting(state)
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(18.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                GlassButton("+", "Daftar", onRegisterClick, Modifier.width(112.dp))
-                GlassButton("→", "Pasar", onMarketClick, Modifier.width(112.dp))
+                GlassButton("+", "Daftar", onRegisterClick, Modifier.weight(1f))
+                GlassButton("→", "Pasar", onMarketClick, Modifier.weight(1f))
                 Box(
                     Modifier
                         .clip(RoundedCornerShape(50))
                         .background(Ot.Sky)
                         .clickable(onClick = onExploreClick)
-                        .padding(horizontal = 26.dp, vertical = 14.dp),
+                        .padding(horizontal = 22.dp, vertical = 12.dp),
                 ) {
-                    Text("•••", color = Ot.Navy, fontSize = 20.sp, letterSpacing = 2.sp)
+                    Text("•••", color = Ot.Navy, fontSize = 18.sp, letterSpacing = 2.sp, maxLines = 1, softWrap = false)
                 }
             }
         }
 
-        SectionTitle("Barang kamu", Modifier.padding(start = 20.dp, top = 8.dp, bottom = 16.dp))
+        SectionTitle("Barang kamu", Modifier.padding(start = 20.dp, top = 4.dp, bottom = 12.dp))
 
         when {
             state.loading -> CircularProgressIndicator(Modifier.padding(20.dp))
@@ -137,18 +136,17 @@ private fun WalletPill(address: String) {
                 clipboard.setText(AnnotatedString(address))
                 Toast.makeText(context, "Alamat disalin", Toast.LENGTH_SHORT).show()
             }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(horizontal = 14.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
-            Modifier.size(48.dp).clip(RoundedCornerShape(14.dp)).background(Ot.Blue),
+            Modifier.size(40.dp).clip(RoundedCornerShape(12.dp)).background(Ot.Blue),
             contentAlignment = Alignment.Center,
         ) {
             Image(
                 painterResource(R.drawable.ic_origintag_logo),
                 contentDescription = null,
-                colorFilter = ColorFilter.tint(Ot.Sky),
-                modifier = Modifier.size(58.dp),
+                modifier = Modifier.size(48.dp),
             )
         }
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
@@ -167,8 +165,8 @@ private fun DateRow(onScanClick: () -> Unit) {
         Text(
             now.dayOfWeek.getDisplayName(TextStyle.SHORT, id).uppercase(),
             color = Color.White,
-            fontSize = 64.sp,
-            lineHeight = 64.sp,
+            fontSize = 48.sp,
+            lineHeight = 48.sp,
             style = MaterialTheme.typography.displayLarge,
         )
         Text(
@@ -186,7 +184,7 @@ private fun DateRow(onScanClick: () -> Unit) {
                 .clickable(onClick = onScanClick),
             contentAlignment = Alignment.Center,
         ) {
-            Text("↗", color = Ot.MintInk, fontSize = 26.sp, fontWeight = FontWeight.Bold)
+            Text("↗", color = Ot.MintInk, fontSize = 22.sp, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -194,7 +192,7 @@ private fun DateRow(onScanClick: () -> Unit) {
 @Composable
 private fun Greeting(state: DashboardViewModel.UiState) {
     val muted = Color.White.copy(alpha = .6f)
-    val big = MaterialTheme.typography.titleLarge.copy(fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+    val big = MaterialTheme.typography.titleLarge.copy(fontSize = 17.sp, fontWeight = FontWeight.SemiBold)
     val hour = LocalDateTime.now().hour
     val salam = when {
         hour < 11 -> "Selamat pagi,"
@@ -204,7 +202,7 @@ private fun Greeting(state: DashboardViewModel.UiState) {
     }
     val firstName = state.name?.substringBefore(' ') ?: "Kolektor"
 
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Text(salam, color = muted, style = big)
             Spacer(Modifier.width(10.dp))
@@ -248,12 +246,12 @@ private fun Avatar(url: String?, name: String) {
 @Composable
 private fun PassportTile(p: PassportDto, onClick: () -> Unit) {
     val verified = p.authenticityScore >= 70
-    OtCard(Modifier.width(180.dp).height(160.dp), onClick) {
+    OtCard(Modifier.width(170.dp).height(140.dp), onClick) {
         AsyncImage(
             model = "${BuildConfig.API_BASE_URL}items/${p.tokenId}/photo/0",
             contentDescription = p.brand,
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize().padding(top = 18.dp, bottom = 22.dp),
+            modifier = Modifier.fillMaxSize().padding(top = 16.dp, bottom = 20.dp),
         )
         Text(
             p.brand,

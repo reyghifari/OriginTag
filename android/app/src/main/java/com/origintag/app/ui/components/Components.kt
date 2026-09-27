@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -111,11 +113,11 @@ fun GlassButton(symbol: String, label: String, onClick: () -> Unit, modifier: Mo
             .background(Color.White.copy(alpha = .10f))
             .border(1.dp, Color.White.copy(alpha = .35f), shape)
             .clickable(onClick = onClick)
-            .padding(vertical = 18.dp),
+            .padding(vertical = 12.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        Text(symbol, color = Color.White, fontSize = 26.sp, textAlign = TextAlign.Center)
+        Text(symbol, color = Color.White, fontSize = 22.sp, textAlign = TextAlign.Center)
         Text(label, color = Color.White, style = MaterialTheme.typography.titleMedium)
     }
 }
@@ -178,4 +180,64 @@ fun OtTopBar(title: String) {
             actionIconContentColor = Color.White,
         ),
     )
+}
+
+/** Hasil transaksi on-chain untuk ditampilkan di [TxResultDialog]. */
+data class TxResult(
+    val success: Boolean,
+    val title: String,
+    val message: String,
+    val txHash: String? = null,
+    val tokenId: String? = null,
+)
+
+/** Dialog sukses/gagal transaksi: ikon besar, keterangan, link BscScan, tombol aksi. */
+@Composable
+fun TxResultDialog(
+    result: TxResult,
+    onDismiss: () -> Unit,
+    primaryLabel: String? = null,
+    onPrimary: (() -> Unit)? = null,
+) {
+    val uri = androidx.compose.ui.platform.LocalUriHandler.current
+    val red = Color(0xFFD93A3A)
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(shape = RoundedCornerShape(28.dp), color = Color.White) {
+            Column(
+                Modifier.fillMaxWidth().padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                Box(
+                    Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(24.dp))
+                        .background(if (result.success) Ot.Mint else red.copy(alpha = .15f)),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        if (result.success) "✓" else "!",
+                        fontSize = 34.sp,
+                        fontWeight = androidx.compose.ui.text.font.FontWeight.Black,
+                        color = if (result.success) Ot.MintInk else red,
+                    )
+                }
+                Text(result.title, style = MaterialTheme.typography.headlineSmall, color = Ot.Navy, textAlign = TextAlign.Center)
+                Text(result.message, style = MaterialTheme.typography.bodyMedium, color = Ot.Muted, textAlign = TextAlign.Center)
+                result.txHash?.let { hash ->
+                    androidx.compose.material3.TextButton(onClick = { uri.openUri("https://testnet.bscscan.com/tx/$hash") }) {
+                        Text("Lihat di BscScan ↗  ${hash.take(8)}…${hash.takeLast(6)}")
+                    }
+                }
+                if (primaryLabel != null && onPrimary != null) {
+                    androidx.compose.material3.Button(
+                        onClick = onPrimary,
+                        modifier = Modifier.fillMaxWidth().height(50.dp),
+                        shape = RoundedCornerShape(16.dp),
+                    ) { Text(primaryLabel) }
+                }
+                androidx.compose.material3.TextButton(onClick = onDismiss) { Text("Tutup") }
+            }
+        }
+    }
 }

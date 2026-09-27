@@ -41,7 +41,9 @@ private fun nunito(weight: Int) = Font(
 val Nunito = FontFamily(nunito(400), nunito(500), nunito(600), nunito(700), nunito(800), nunito(900))
 
 private val Base = Typography()
-private fun TextStyle.n(w: FontWeight? = null) = copy(fontFamily = Nunito, fontWeight = w ?: fontWeight)
+// Skala 0.88: ukuran default M3 terasa terlalu besar di HP dengan display size diperbesar.
+private fun TextStyle.n(w: FontWeight? = null) =
+    copy(fontFamily = Nunito, fontWeight = w ?: fontWeight, fontSize = fontSize * 0.88f, lineHeight = lineHeight * 0.88f)
 
 private val AppTypography = Typography(
     displayLarge = Base.displayLarge.n(FontWeight.Black),

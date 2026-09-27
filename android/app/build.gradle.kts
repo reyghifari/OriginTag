@@ -28,7 +28,8 @@ android {
 
         // Backend via Cloudflare Tunnel (HTTPS publik) — bisa diakses emulator & HP fisik.
         // URL quick-tunnel berubah tiap cloudflared restart; update di sini bila berubah.
-        buildConfigField("String", "API_BASE_URL", "\"http://10.0.2.2:3210/\"")
+        // IP Mac di Wi-Fi lokal: bisa diakses emulator & HP fisik di jaringan yang sama. Ganti bila IP berubah.
+        buildConfigField("String", "API_BASE_URL", "\"http://192.168.100.28:3210/\"")
 
         // Part 5a — Web3Auth. Client ID dibaca dari local.properties (tidak di-commit).
         buildConfigField("String", "WEB3AUTH_CLIENT_ID", "\"$web3authClientId\"")

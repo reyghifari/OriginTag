@@ -93,10 +93,8 @@ fun OnboardingScreen(
         Image(
             painter = painterResource(R.drawable.ic_origintag_logo),
             contentDescription = "Logo OriginTag",
-            modifier = Modifier
-                .size(112.dp)
-                .clip(RoundedCornerShape(28.dp))
-                .background(Color(0xFFF0B90B)),
+            // lubang & centang logo berwarna Ot.Blue → menyatu dengan latar
+            modifier = Modifier.size(150.dp),
         )
         Spacer(Modifier.height(16.dp))
         Text("ORIGINTAG", style = MaterialTheme.typography.displaySmall, color = Color.White)

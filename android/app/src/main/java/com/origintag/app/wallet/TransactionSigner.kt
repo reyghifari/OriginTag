@@ -2,6 +2,7 @@ package com.origintag.app.wallet
 
 import com.origintag.app.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.web3j.crypto.Credentials
 import org.web3j.crypto.RawTransaction
@@ -28,7 +29,8 @@ class TransactionSigner @Inject constructor() {
      * Kirim transaksi ke `toContract` dengan `data` (calldata dari backend),
      * ditandatangani `privateKey`. `valueWei` = jumlah BNB (wei desimal) yang dikirim
      * — dipakai untuk buyItem marketplace; null/0 untuk transfer/approve/list.
-     * Mengembalikan tx hash.
+     * Menunggu sampai tx masuk blok (status sukses) lalu mengembalikan tx hash,
+     * supaya pemanggil yang me-refresh data langsung melihat state chain terbaru.
      */
     suspend fun signAndSend(
         toContract: String,
@@ -60,6 +62,17 @@ class TransactionSigner @Inject constructor() {
         if (sent.hasError()) {
             error("Transaksi ditolak: ${sent.error.message}")
         }
-        sent.transactionHash
+        val hash = sent.transactionHash
+
+        // BSC Testnet ~3 dtk/blok; 60 dtk cukup longgar.
+        repeat(60) {
+            val receipt = web3j.ethGetTransactionReceipt(hash).send().transactionReceipt
+            if (receipt.isPresent) {
+                if (!receipt.get().isStatusOK) error("Transaksi gagal di chain (revert): $hash")
+                return@withContext hash
+            }
+            delay(1_000)
+        }
+        error("Transaksi belum terkonfirmasi setelah 60 detik: $hash")
     }
 }
