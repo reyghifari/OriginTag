@@ -6,7 +6,7 @@
     <!-- Part 5b: foto barang, Part 5e: scan QR -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- usesCleartextTraffic hanya untuk dev (backend lokal http). Hapus sebelum release. -->
+    <!-- usesCleartextTraffic: true di debug (backend lokal http), false di release (lihat build.gradle.kts). -->
     <application
         android:name=".OriginTagApp"
         android:allowBackup="true"
@@ -14,7 +14,7 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/Theme.OriginTag"
-        android:usesCleartextTraffic="true"
+        android:usesCleartextTraffic="${usesCleartext}"
         tools:replace="android:allowBackup">
 
         <activity

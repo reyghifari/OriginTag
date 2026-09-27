@@ -45,11 +45,12 @@ export class ItemsService {
       evidenceObjectId,
     });
 
-    // Di Render, RENDER_EXTERNAL_URL diisi otomatis dengan URL publik service.
+    // Render mengisi RENDER_EXTERNAL_URL, Hugging Face Spaces mengisi SPACE_HOST (tanpa skema).
+    const spaceHost = this.config.get<string>('SPACE_HOST');
     const baseUrl =
       this.config.get('PUBLIC_VERIFY_BASE_URL') ??
       this.config.get('RENDER_EXTERNAL_URL') ??
-      'http://localhost:3000';
+      (spaceHost ? `https://${spaceHost}` : 'http://localhost:3000');
     return {
       status: 'minted',
       tokenId,

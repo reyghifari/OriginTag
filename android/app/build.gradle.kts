@@ -15,6 +15,9 @@ val localProperties = Properties().apply {
 val web3authClientId: String =
     localProperties.getProperty("WEB3AUTH_CLIENT_ID") ?: "GANTI_DENGAN_CLIENT_ID_ANDA"
 
+// Backend publik (Hugging Face Space) untuk APK release yang dibagikan.
+val releaseApiBaseUrl = "https://GANTI-DENGAN-SPACE.hf.space/"
+
 android {
     namespace = "com.origintag.app"
     compileSdk = 35
@@ -24,11 +27,9 @@ android {
         minSdk = 26
         targetSdk = 35
         versionCode = 1
-        versionName = "0.1.0"
+        versionName = "1.0.0"
 
-        // Backend via Cloudflare Tunnel (HTTPS publik) — bisa diakses emulator & HP fisik.
-        // URL quick-tunnel berubah tiap cloudflared restart; update di sini bila berubah.
-        // IP Mac di Wi-Fi lokal: bisa diakses emulator & HP fisik di jaringan yang sama. Ganti bila IP berubah.
+        // Debug: backend lokal di Mac (IP Wi-Fi) — ganti bila IP berubah. Release memakai releaseApiBaseUrl.
         buildConfigField("String", "API_BASE_URL", "\"http://192.168.100.28:3210/\"")
 
         // Part 5a — Web3Auth. Client ID dibaca dari local.properties (tidak di-commit).
@@ -59,8 +60,24 @@ android {
         }
     }
 
+    signingConfigs {
+        // Kredensial di local.properties (tidak di-commit); keystore di android/keystore/ (gitignored).
+        create("release") {
+            localProperties.getProperty("RELEASE_STORE_FILE")?.let { storeFile = rootProject.file(it) }
+            storePassword = localProperties.getProperty("RELEASE_STORE_PASSWORD")
+            keyAlias = localProperties.getProperty("RELEASE_KEY_ALIAS")
+            keyPassword = localProperties.getProperty("RELEASE_KEY_PASSWORD")
+        }
+    }
+
     buildTypes {
+        debug {
+            manifestPlaceholders["usesCleartext"] = "true" // backend lokal pakai http
+        }
         release {
+            signingConfig = signingConfigs.getByName("release")
+            buildConfigField("String", "API_BASE_URL", "\"$releaseApiBaseUrl\"")
+            manifestPlaceholders["usesCleartext"] = "false" // release hanya HTTPS
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
