@@ -15,8 +15,8 @@ val localProperties = Properties().apply {
 val web3authClientId: String =
     localProperties.getProperty("WEB3AUTH_CLIENT_ID") ?: "GANTI_DENGAN_CLIENT_ID_ANDA"
 
-// Backend publik (Hugging Face Space) untuk APK release yang dibagikan.
-val releaseApiBaseUrl = "https://GANTI-DENGAN-SPACE.hf.space/"
+// Backend publik (Vercel) untuk APK release yang dibagikan.
+val releaseApiBaseUrl = "https://origintag-api.vercel.app/"
 
 android {
     namespace = "com.origintag.app"
